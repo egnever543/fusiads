@@ -1,6 +1,7 @@
 import { getConfig } from "@/lib/config";
 import GoogleAds from "./_components/GoogleAds";
-import WhatsAppCTA from "./_components/WhatsAppCTA";
+import FlowTrigger from "./_components/FlowTrigger";
+import ChatFlow from "./_components/ChatFlow";
 import "./_components/landing.css";
 
 // Le sempre a configuracao mais recente do Supabase.
@@ -8,14 +9,6 @@ export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const config = await getConfig();
-
-  // Props comuns para todos os botoes de acao (divisao de trafego + conversao).
-  const cta = {
-    phones: config.phones,
-    message: config.whatsappMessage,
-    googleAdsId: config.googleAdsId,
-    conversionLabel: config.conversionLabel,
-  };
 
   return (
     <>
@@ -31,9 +24,7 @@ export default async function HomePage() {
             <p className="hero-subtitle">
               A MELHOR DO BRASIL + DE 85 MIL CONTEÚDO! CANAIS, FILMES E SÉRIES EM HD, FULL HD E 4K
             </p>
-            <WhatsAppCTA {...cta} className="cta-button">
-              TESTAR AGORA
-            </WhatsAppCTA>
+            <FlowTrigger className="cta-button">TESTAR AGORA</FlowTrigger>
           </div>
           <div className="hero-image">
             <img
@@ -76,9 +67,7 @@ export default async function HomePage() {
           </div>
 
           <div style={{ textAlign: "center", marginTop: "60px" }}>
-            <WhatsAppCTA {...cta} className="cta-button">
-              TESTAR AGORA
-            </WhatsAppCTA>
+            <FlowTrigger className="cta-button">TESTAR AGORA</FlowTrigger>
           </div>
         </section>
 
@@ -114,9 +103,7 @@ export default async function HomePage() {
               </div>
 
               <div style={{ marginTop: "40px" }}>
-                <WhatsAppCTA {...cta} className="cta-button">
-                  TESTAR AGORA
-                </WhatsAppCTA>
+                <FlowTrigger className="cta-button">TESTAR AGORA</FlowTrigger>
               </div>
             </div>
           </div>
@@ -146,9 +133,7 @@ export default async function HomePage() {
                   <li>+70 Mil Conteúdos</li>
                   <li>Atualiza 1x no Mês</li>
                 </ul>
-                <WhatsAppCTA {...cta} className="pricing-button">
-                  TESTAR AGORA
-                </WhatsAppCTA>
+                <FlowTrigger className="pricing-button">TESTAR AGORA</FlowTrigger>
               </div>
             ))}
           </div>
@@ -161,9 +146,7 @@ export default async function HomePage() {
             Não perca tempo! Comece agora a assistir seus programas favoritos em altíssima
             qualidade.
           </p>
-          <WhatsAppCTA {...cta} className="cta-button">
-            TESTAR AGORA
-          </WhatsAppCTA>
+          <FlowTrigger className="cta-button">TESTAR AGORA</FlowTrigger>
         </section>
 
         {/* Footer */}
@@ -172,10 +155,18 @@ export default async function HomePage() {
         </footer>
 
         {/* Botão Flutuante */}
-        <WhatsAppCTA {...cta} className="floating-button" title="Falar no WhatsApp">
+        <FlowTrigger className="floating-button" title="Falar no WhatsApp">
           💬
-        </WhatsAppCTA>
+        </FlowTrigger>
       </div>
+
+      {/* Fluxo de chat (abre ao clicar em qualquer botão acima). */}
+      <ChatFlow
+        phones={config.phones}
+        introMessage={config.whatsappMessage}
+        googleAdsId={config.googleAdsId}
+        conversionLabel={config.conversionLabel}
+      />
     </>
   );
 }

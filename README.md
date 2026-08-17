@@ -4,11 +4,20 @@ Landing page (front) + painel administrativo (`/admin`) em um único app **Next.
 
 ## O que faz
 
-- **Front (`/`)**: landing page com botão de WhatsApp.
-- **Divisão de tráfego**: até **4 números** de WhatsApp com **peso**. A cada clique, um número é sorteado pela proporção dos pesos.
-- **Google Ads**: injeta o `gtag` e dispara uma **conversão** no clique do botão de WhatsApp.
-- **Painel `/admin`** (protegido por senha): edita os números, pesos, mensagem, tag do Google Ads e os textos do site.
-- **Supabase**: guarda a configuração numa tabela simples.
+- **Front (`/`)**: landing da PREMIUM TV com um **fluxo de chat** estilo WhatsApp
+  (substitui o Typebot). O visitante escolhe o dispositivo (e, quando existe,
+  a marca/tipo) e é encaminhado ao WhatsApp.
+- **Divisão de tráfego**: até **4 números** de WhatsApp com **peso**. Ao concluir
+  o fluxo, um número é sorteado pela proporção dos pesos.
+- **Mensagem personalizada**: a mensagem enviada ao WhatsApp inclui o
+  **dispositivo escolhido** + um **código único** (ex: `PT-MSXGTY9HP7P`).
+- **Rastreamento no Supabase**: ao concluir o fluxo, grava um **lead** com esse
+  código + `gclid`, `fbclid`, UTMs, referrer e user-agent. Depois você cruza o
+  código recebido no WhatsApp com a tabela `leads` para recuperar o `gclid`.
+- **Google Ads**: injeta o `gtag` e dispara uma **conversão** ao concluir o fluxo.
+- **Painel `/admin`** (protegido por senha): edita os números, pesos, mensagem
+  base e a tag do Google Ads.
+- **Supabase**: guarda a configuração (`site_config`) e os leads (`leads`).
 
 ## Configuração
 
@@ -54,9 +63,25 @@ A landing recriada fica em [`app/page.tsx`](app/page.tsx) e o CSS em
 números ativos (pela proporção dos pesos), dispara a conversão do Google Ads
 (se o rótulo estiver preenchido) e abre o WhatsApp.
 
-> O site original abria um chatbot (Typebot). Aqui isso foi substituído pelo
-> fluxo de WhatsApp com divisão de tráfego, que é o objetivo do painel.
+> O site original abria um chatbot (Typebot). Aqui isso foi substituído por um
+> **fluxo de chat nativo** ([`lib/flow.ts`](lib/flow.ts) +
+> [`app/_components/ChatFlow.tsx`](app/_components/ChatFlow.tsx)) com divisão de
+> tráfego, que é o objetivo do painel.
 
 O ID do Google Ads já vem pré-preenchido com `AW-17909477604` (editável em
-`/admin`). Para a conversão disparar no clique, preencha também o **rótulo da
-conversão** no painel (você pega isso no Google Ads, na ação de conversão).
+`/admin`). Para a conversão disparar ao concluir o fluxo, preencha também o
+**rótulo da conversão** no painel (você pega isso no Google Ads, na ação de
+conversão).
+
+### Editar o fluxo de chat
+
+O fluxo (perguntas, opções e ramificações) fica em [`lib/flow.ts`](lib/flow.ts).
+Cada opção com `next` leva a outra pergunta; sem `next`, ela finaliza e vai para
+o WhatsApp. O `value` de cada escolha é concatenado no rótulo do dispositivo
+enviado na mensagem.
+
+### Recuperar o gclid de um lead
+
+Cada lead recebe um código (ex: `PT-MSXGTY9HP7P`), que chega junto na mensagem do
+WhatsApp. No Supabase (tabela `leads`), busque por esse `id` para obter o `gclid`
+e os demais dados de rastreamento daquele visitante.

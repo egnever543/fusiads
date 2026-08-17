@@ -98,6 +98,57 @@ export async function getConfig(): Promise<SiteConfig> {
   }
 }
 
+// ==========================================================================
+// Leads (visitantes que concluiram o fluxo de chat)
+// ==========================================================================
+
+export type LeadInput = {
+  id: string;
+  device?: string;
+  path?: string[];
+  gclid?: string;
+  fbclid?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
+  referrer?: string;
+  user_agent?: string;
+};
+
+function clip(v: unknown, max = 500): string | null {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s ? s.slice(0, max) : null;
+}
+
+// Grava um lead usando a chave service_role (apenas no servidor).
+export async function insertLead(lead: LeadInput): Promise<{ ok: boolean; error?: string }> {
+  const client = writeClient();
+  if (!client) return { ok: false, error: "Supabase não configurado." };
+  if (!lead?.id) return { ok: false, error: "ID ausente." };
+
+  const row = {
+    id: clip(lead.id, 64),
+    device: clip(lead.device),
+    path: Array.isArray(lead.path) ? lead.path.slice(0, 20) : null,
+    gclid: clip(lead.gclid, 2000),
+    fbclid: clip(lead.fbclid, 2000),
+    utm_source: clip(lead.utm_source),
+    utm_medium: clip(lead.utm_medium),
+    utm_campaign: clip(lead.utm_campaign),
+    utm_content: clip(lead.utm_content),
+    utm_term: clip(lead.utm_term),
+    referrer: clip(lead.referrer, 2000),
+    user_agent: clip(lead.user_agent, 1000),
+  };
+
+  const { error } = await client.from("leads").upsert(row, { onConflict: "id" });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export type SaveResult = { ok: true } | { ok: false; error: string };
 
 // Grava a configuracao usando a chave service_role (apenas no servidor).
