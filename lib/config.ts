@@ -23,11 +23,6 @@ export type SiteConfig = {
   googleAdsId: string;
   // Rotulo da conversao (ex: "AbCdEfGhIj"). Dispara no clique do WhatsApp.
   conversionLabel: string;
-  // Textos da landing (usados pelo template padrao do front).
-  siteName: string;
-  headline: string;
-  subheadline: string;
-  ctaText: string;
 };
 
 export const DEFAULT_CONFIG: SiteConfig = {
@@ -37,13 +32,9 @@ export const DEFAULT_CONFIG: SiteConfig = {
     { number: "", weight: 1, enabled: false, label: "Número 3" },
     { number: "", weight: 1, enabled: false, label: "Número 4" },
   ],
-  whatsappMessage: "Olá! Vim pelo site e gostaria de mais informações.",
-  googleAdsId: "",
+  whatsappMessage: "Olá! Quero testar a PREMIUM TV.",
+  googleAdsId: "AW-17909477604",
   conversionLabel: "",
-  siteName: "Fusiads",
-  headline: "Sua solução começa aqui",
-  subheadline: "Fale com a gente agora mesmo pelo WhatsApp e receba um atendimento rápido.",
-  ctaText: "Falar no WhatsApp",
 };
 
 // Mescla o que veio do banco com os defaults, garantindo formato correto.

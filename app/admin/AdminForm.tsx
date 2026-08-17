@@ -103,26 +103,6 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         </div>
       </Card>
 
-      {/* --- Textos do site --- */}
-      <Card title="Textos do site" hint="Usados pelo template padrão do front.">
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Nome do site</label>
-          <input name="siteName" defaultValue={initial.siteName} className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Título (headline)</label>
-          <input name="headline" defaultValue={initial.headline} className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Subtítulo</label>
-          <input name="subheadline" defaultValue={initial.subheadline} className={inputClass} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700">Texto do botão</label>
-          <input name="ctaText" defaultValue={initial.ctaText} className={inputClass} />
-        </div>
-      </Card>
-
       <div className="flex items-center gap-4">
         <SubmitButton />
         {state.ok && <span className="text-sm text-green-700">Salvo com sucesso!</span>}

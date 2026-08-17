@@ -45,9 +45,18 @@ npm run dev
 2. Em **Settings → Environment Variables**, adicione as 4 variáveis acima.
 3. Deploy. Pronto.
 
-## Trocar o front pelo HTML do seu site
+## O front (PREMIUM TV)
 
-O template padrão fica em [`app/page.tsx`](app/page.tsx). Para usar o HTML do seu
-site existente, substitua o conteúdo do `<main>` pelo seu HTML e troque os botões
-de ação pelo componente `<WhatsAppCTA />` — ele cuida da divisão de tráfego e da
-conversão do Google Ads automaticamente.
+A landing recriada fica em [`app/page.tsx`](app/page.tsx) e o CSS em
+[`app/_components/landing.css`](app/_components/landing.css). Todos os botões
+"TESTAR AGORA", os botões dos planos e o botão flutuante usam o componente
+[`WhatsAppCTA`](app/_components/WhatsAppCTA.tsx): no clique ele sorteia um dos
+números ativos (pela proporção dos pesos), dispara a conversão do Google Ads
+(se o rótulo estiver preenchido) e abre o WhatsApp.
+
+> O site original abria um chatbot (Typebot). Aqui isso foi substituído pelo
+> fluxo de WhatsApp com divisão de tráfego, que é o objetivo do painel.
+
+O ID do Google Ads já vem pré-preenchido com `AW-17909477604` (editável em
+`/admin`). Para a conversão disparar no clique, preencha também o **rótulo da
+conversão** no painel (você pega isso no Google Ads, na ação de conversão).
