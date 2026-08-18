@@ -1,5 +1,4 @@
 import { getConfig } from "@/lib/config";
-import GoogleAds from "./_components/GoogleAds";
 import FlowTrigger from "./_components/FlowTrigger";
 import ChatFlow from "./_components/ChatFlow";
 import "./_components/landing.css";
@@ -12,9 +11,6 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Google Ads (gtag) com o ID definido no painel /admin. */}
-      <GoogleAds adsId={config.googleAdsId} />
-
       <div className="premium-landing">
         {/* Hero Section */}
         <section className="hero">

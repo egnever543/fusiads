@@ -101,10 +101,12 @@ function writeClient() {
 // Leitura / gravacao da configuracao
 // ==========================================================================
 
-// Le a configuracao. Se o Supabase nao estiver configurado ou der erro,
-// devolve os defaults pra o site nunca quebrar.
+// Le a configuracao. Roda APENAS no servidor (Server Components / rotas), entao
+// prefere a chave service_role e cai para a anon como fallback. Assim o front
+// nao depende da chave anon estar configurada. Se nada estiver disponivel ou
+// der erro, devolve os defaults pra o site nunca quebrar.
 export async function getConfig(): Promise<SiteConfig> {
-  const client = readClient();
+  const client = writeClient() ?? readClient();
   if (!client) return DEFAULT_CONFIG;
   try {
     const { data, error } = await client
