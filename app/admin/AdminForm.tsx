@@ -91,15 +91,21 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
       {/* --- Google Ads --- */}
       <Card
         title="Google Ads"
-        hint="A conversão é disparada quando o visitante clica no botão de WhatsApp."
+        hint="A conversão é disparada quando o visitante conclui o fluxo de chat (WhatsApp)."
       >
         <div>
-          <label className="block text-sm font-medium text-slate-700">ID de conversão (ex: AW-123456789)</label>
+          <label className="block text-sm font-medium text-slate-700">ID do Google Ads (ex: AW-123456789)</label>
           <input name="googleAdsId" defaultValue={initial.googleAdsId} placeholder="AW-123456789" className={inputClass} />
+          <p className="mt-1 text-xs text-slate-500">
+            Pode colar só o ID ou o snippet inteiro do Google — o sistema extrai o AW- sozinho.
+          </p>
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700">Rótulo da conversão</label>
+          <label className="block text-sm font-medium text-slate-700">Rótulo da conversão (opcional)</label>
           <input name="conversionLabel" defaultValue={initial.conversionLabel} placeholder="AbCdEfGhIjKl" className={inputClass} />
+          <p className="mt-1 text-xs text-slate-500">
+            Só necessário para registrar a conversão no clique. Fica em Google Ads → Conversões → sua ação (o código depois da barra em “AW-123/AbCd…”).
+          </p>
         </div>
       </Card>
 
