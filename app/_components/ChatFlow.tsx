@@ -96,7 +96,9 @@ export default function ChatFlow({ phones, introMessage, googleAdsId, conversion
   // de pop-up) quando a opcao finaliza o fluxo.
   const finish = useCallback(
     (path: string[]) => {
-      const deviceLabel = path.join(" - ");
+      // Na mensagem mostramos apenas a ultima opcao escolhida
+      // (ex: "Celular iPhone"), nao o caminho inteiro.
+      const deviceLabel = path.length ? path[path.length - 1] : "";
       const id = genLeadId();
       const phone = pickPhone(phones);
 
