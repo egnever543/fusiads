@@ -37,6 +37,22 @@ export const DEFAULT_CONFIG: SiteConfig = {
   conversionLabel: "",
 };
 
+// Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
+// colado (ex: <script ... id=AW-123></script>), pegando o primeiro AW-XXXX.
+export function sanitizeAdsId(value: unknown): string {
+  const s = String(value ?? "").trim();
+  const m = s.match(/AW-\d+/i);
+  return m ? m[0].toUpperCase() : s;
+}
+
+// Normaliza o rotulo da conversao. Aceita "AW-123/AbCdEf" (pega o depois da
+// barra) ou apenas "AbCdEf". Remove aspas acidentais.
+export function sanitizeConversionLabel(value: unknown): string {
+  let s = String(value ?? "").trim().replace(/['"]/g, "");
+  if (s.includes("/")) s = s.split("/").pop()!.trim();
+  return s;
+}
+
 // Mescla o que veio do banco com os defaults, garantindo formato correto.
 export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): SiteConfig {
   const merged = { ...DEFAULT_CONFIG, ...(raw ?? {}) };
@@ -51,7 +67,12 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
       label: p.label ?? `Número ${i + 1}`,
     });
   }
-  return { ...merged, phones: normalizedPhones };
+  return {
+    ...merged,
+    googleAdsId: sanitizeAdsId(merged.googleAdsId),
+    conversionLabel: sanitizeConversionLabel(merged.conversionLabel),
+    phones: normalizedPhones,
+  };
 }
 
 // ==========================================================================
