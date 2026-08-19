@@ -83,10 +83,17 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Evita o cache de fetch do Next/Vercel: sempre le o valor mais recente do
+// Supabase (senao, ao trocar a config no /admin, o front continua servindo o
+// valor antigo ate o cache expirar).
+const noStoreFetch: typeof fetch = (input, init) =>
+  fetch(input, { ...init, cache: "no-store" });
+
 function readClient() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
   return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: false },
+    global: { fetch: noStoreFetch },
   });
 }
 
@@ -94,6 +101,7 @@ function writeClient() {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return null;
   return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
+    global: { fetch: noStoreFetch },
   });
 }
 
