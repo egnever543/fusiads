@@ -5,6 +5,7 @@ import "./_components/landing.css";
 
 // Le sempre a configuracao mais recente do Supabase.
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function HomePage() {
   const config = await getConfig();
