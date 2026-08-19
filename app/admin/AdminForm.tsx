@@ -67,6 +67,16 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
                   inputMode="numeric"
                   placeholder="5511999998888"
                   className={inputClass}
+                  onInput={(e) => {
+                    // Marca "Ativo" automaticamente ao digitar um número.
+                    const form = e.currentTarget.form;
+                    const cb = form?.elements.namedItem(
+                      `phone_${i}_enabled`
+                    ) as HTMLInputElement | null;
+                    if (cb && e.currentTarget.value.replace(/\D/g, "")) {
+                      cb.checked = true;
+                    }
+                  }}
                 />
               </div>
               <div className="sm:col-span-1">
