@@ -23,6 +23,9 @@ export type SiteConfig = {
   googleAdsId: string;
   // Rotulo da conversao (ex: "AbCdEfGhIj"). Dispara no clique do WhatsApp.
   conversionLabel: string;
+  // Nome EXATO da acao de conversao offline no Google Ads. Vai na coluna
+  // "Conversion Name" do CSV exportado em /vendas.
+  offlineConversionName: string;
 };
 
 export const DEFAULT_CONFIG: SiteConfig = {
@@ -35,6 +38,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   whatsappMessage: "Olá! Quero testar a PREMIUM TV.",
   googleAdsId: "AW-17909477604",
   conversionLabel: "",
+  offlineConversionName: "",
 };
 
 // Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
@@ -71,6 +75,7 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
     ...merged,
     googleAdsId: sanitizeAdsId(merged.googleAdsId),
     conversionLabel: sanitizeConversionLabel(merged.conversionLabel),
+    offlineConversionName: String(merged.offlineConversionName ?? "").trim(),
     phones: normalizedPhones,
   };
 }
@@ -198,4 +203,100 @@ export async function saveConfig(config: SiteConfig): Promise<SaveResult> {
     .upsert({ id: 1, data: clean, updated_at: new Date().toISOString() });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+// ==========================================================================
+// Vendas (recuperar um lead pelo codigo e registrar a venda)
+// ==========================================================================
+
+export type Lead = {
+  id: string;
+  device: string | null;
+  path: string[] | null;
+  gclid: string | null;
+  fbclid: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  utm_term: string | null;
+  referrer: string | null;
+  user_agent: string | null;
+  created_at: string | null;
+  sold: boolean | null;
+  sale_value: number | null;
+  currency: string | null;
+  sold_at: string | null;
+};
+
+const LEAD_COLUMNS =
+  "id, device, path, gclid, fbclid, utm_source, utm_medium, utm_campaign, utm_content, utm_term, referrer, user_agent, created_at, sold, sale_value, currency, sold_at";
+
+// Busca um lead pelo codigo (id). Roda apenas no servidor.
+export async function getLead(id: string): Promise<Lead | null> {
+  const client = writeClient();
+  if (!client || !id) return null;
+  const code = id.trim();
+  const { data, error } = await client
+    .from("leads")
+    .select(LEAD_COLUMNS)
+    .eq("id", code)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as unknown as Lead;
+}
+
+export type SaleInput = {
+  id: string;
+  sold: boolean;
+  value?: number | null;
+  currency?: string;
+  soldAt?: string; // ISO
+};
+
+// Registra (ou desfaz) a venda de um lead.
+export async function updateLeadSale(
+  input: SaleInput
+): Promise<{ ok: boolean; error?: string }> {
+  const client = writeClient();
+  if (!client) return { ok: false, error: "Supabase não configurado." };
+  const code = String(input.id ?? "").trim();
+  if (!code) return { ok: false, error: "Código ausente." };
+
+  const row: Record<string, unknown> = {
+    sold: Boolean(input.sold),
+    sale_value: input.sold ? (Number.isFinite(Number(input.value)) ? Number(input.value) : null) : null,
+    currency: input.sold ? (input.currency || "BRL") : null,
+    sold_at: input.sold ? (input.soldAt || new Date().toISOString()) : null,
+  };
+
+  const { error } = await client.from("leads").update(row).eq("id", code);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+// Lista os leads vendidos (com gclid) para exportar ao Google Ads.
+// Filtra por data da venda (sold_at) quando informado.
+export async function listSoldLeads(opts: {
+  from?: string;
+  to?: string;
+  onlyWithGclid?: boolean;
+}): Promise<Lead[]> {
+  const client = writeClient();
+  if (!client) return [];
+  let query = client
+    .from("leads")
+    .select(LEAD_COLUMNS)
+    .eq("sold", true)
+    .order("sold_at", { ascending: true })
+    .limit(5000);
+
+  if (opts.from) query = query.gte("sold_at", opts.from);
+  if (opts.to) query = query.lte("sold_at", opts.to);
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  let rows = data as unknown as Lead[];
+  if (opts.onlyWithGclid) rows = rows.filter((r) => r.gclid);
+  return rows;
 }

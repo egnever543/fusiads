@@ -61,6 +61,7 @@ export async function saveConfigAction(
     whatsappMessage: String(formData.get("whatsappMessage") ?? ""),
     googleAdsId: String(formData.get("googleAdsId") ?? "").trim(),
     conversionLabel: String(formData.get("conversionLabel") ?? "").trim(),
+    offlineConversionName: String(formData.get("offlineConversionName") ?? "").trim(),
   });
 
   const result = await saveConfig(config);

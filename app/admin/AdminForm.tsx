@@ -117,6 +117,18 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
             Só necessário para registrar a conversão no clique. Fica em Google Ads → Conversões → sua ação (o código depois da barra em “AW-123/AbCd…”).
           </p>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Nome da conversão offline</label>
+          <input
+            name="offlineConversionName"
+            defaultValue={initial.offlineConversionName}
+            placeholder="Ex: Venda WhatsApp"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Usado no CSV da página <strong>/vendas</strong>. Precisa ser <strong>idêntico</strong> ao nome da ação de conversão offline (por importação) que você cria no Google Ads.
+          </p>
+        </div>
       </Card>
 
       <div className="flex items-center gap-4">
