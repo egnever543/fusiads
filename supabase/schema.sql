@@ -49,8 +49,20 @@ create table if not exists public.leads (
   utm_term     text,
   referrer     text,
   user_agent   text,
-  created_at   timestamptz not null default now()
+  created_at   timestamptz not null default now(),
+  -- Venda (preenchido na pagina /vendas)
+  sold         boolean not null default false,
+  sale_value   numeric,
+  currency     text default 'BRL',
+  sold_at      timestamptz
 );
+
+-- Migracao para bancos que ja tinham a tabela leads sem as colunas de venda:
+alter table public.leads add column if not exists sold boolean not null default false;
+alter table public.leads add column if not exists sale_value numeric;
+alter table public.leads add column if not exists currency text default 'BRL';
+alter table public.leads add column if not exists sold_at timestamptz;
+create index if not exists leads_sold_at_idx on public.leads (sold_at desc);
 
 create index if not exists leads_gclid_idx on public.leads (gclid);
 create index if not exists leads_created_at_idx on public.leads (created_at desc);
