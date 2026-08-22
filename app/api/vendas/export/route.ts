@@ -21,15 +21,38 @@ function csvEscape(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
+// Confere a senha vinda por HTTP Basic (usuario:senha). O Google Ads envia
+// usuario/senha; aqui a SENHA precisa ser igual ao EXPORT_TOKEN (o usuario
+// pode ser qualquer coisa).
+function basicPasswordOk(request: Request, expected?: string): boolean {
+  if (!expected) return false;
+  const h = request.headers.get("authorization") || "";
+  if (!h.toLowerCase().startsWith("basic ")) return false;
+  try {
+    const decoded = Buffer.from(h.slice(6), "base64").toString("utf8");
+    const pass = decoded.slice(decoded.indexOf(":") + 1);
+    return pass === expected;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Autoriza por login (download manual) OU por token secreto na URL
-  // (para o Google Ads buscar o CSV automaticamente, agendado via HTTPS).
+  // Autoriza de 3 formas: login (download manual), token na URL, ou
+  // usuario/senha HTTP Basic (usado pelo agendamento do Google Ads).
+  const envToken = process.env.EXPORT_TOKEN;
   const token = url.searchParams.get("token");
-  const tokenOk = Boolean(process.env.EXPORT_TOKEN) && token === process.env.EXPORT_TOKEN;
-  if (!tokenOk && !isAuthenticated()) {
-    return new Response("Não autenticado", { status: 401 });
+  const authorized =
+    isAuthenticated() ||
+    (Boolean(envToken) && token === envToken) ||
+    basicPasswordOk(request, envToken);
+  if (!authorized) {
+    return new Response("Não autenticado", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Basic realm="vendas"' },
+    });
   }
 
   const fromRaw = url.searchParams.get("from") || undefined;
