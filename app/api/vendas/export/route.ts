@@ -90,6 +90,21 @@ export async function GET(request: Request) {
     );
   }
 
+  // Sem vendas ainda: inclui UMA linha de exemplo para o Google Ads conseguir
+  // detectar o esquema ao conectar. O gclid falso nao casa com nenhum clique,
+  // entao nao credita conversao. Some assim que houver vendas reais.
+  if (leads.length === 0) {
+    lines.push(
+      [
+        csvEscape("EXEMPLO_SEM_VENDAS"),
+        csvEscape(conversionName),
+        csvEscape(fmtTimeBR(new Date().toISOString())),
+        csvEscape("1"),
+        csvEscape("BRL"),
+      ].join(",")
+    );
+  }
+
   const csv = lines.join("\r\n");
   const stamp = new Date().toISOString().slice(0, 10);
   return new Response(csv, {
