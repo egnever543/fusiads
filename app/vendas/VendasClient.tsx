@@ -119,6 +119,7 @@ export default function VendasClient({
         <>
           <Card title={`Lead ${lead.id}`}>
             <div>
+              <Row label="gclid" value={lead.gclid} />
               <Row label="Dispositivo" value={lead.device} />
               <Row label="Caminho" value={Array.isArray(lead.path) ? lead.path.join(" › ") : null} />
               <Row label="utm_source" value={lead.utm_source} />
