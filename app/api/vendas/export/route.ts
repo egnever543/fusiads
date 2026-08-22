@@ -22,16 +22,29 @@ function csvEscape(v: string): string {
 }
 
 export async function GET(request: Request) {
-  if (!isAuthenticated()) {
+  const url = new URL(request.url);
+
+  // Autoriza por login (download manual) OU por token secreto na URL
+  // (para o Google Ads buscar o CSV automaticamente, agendado via HTTPS).
+  const token = url.searchParams.get("token");
+  const tokenOk = Boolean(process.env.EXPORT_TOKEN) && token === process.env.EXPORT_TOKEN;
+  if (!tokenOk && !isAuthenticated()) {
     return new Response("Não autenticado", { status: 401 });
   }
 
-  const url = new URL(request.url);
   const fromRaw = url.searchParams.get("from") || undefined;
   const toRaw = url.searchParams.get("to") || undefined;
+  const daysRaw = url.searchParams.get("days");
   // Datas (yyyy-mm-dd) viram intervalo de dia inteiro em UTC.
-  const from = fromRaw ? `${fromRaw}T00:00:00.000Z` : undefined;
+  let from = fromRaw ? `${fromRaw}T00:00:00.000Z` : undefined;
   const to = toRaw ? `${toRaw}T23:59:59.999Z` : undefined;
+  // Janela deslizante opcional: ?days=90 => ultimos 90 dias (util no agendamento).
+  if (!from && daysRaw) {
+    const d = Number(daysRaw);
+    if (Number.isFinite(d) && d > 0) {
+      from = new Date(Date.now() - d * 86400000).toISOString();
+    }
+  }
 
   const config = await getConfig();
   const conversionName = config.offlineConversionName || "Conversão Offline";
