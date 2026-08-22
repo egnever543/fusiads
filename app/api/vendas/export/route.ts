@@ -4,8 +4,8 @@ import { listSoldLeads, getConfig } from "@/lib/config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Formata um instante (UTC) no fuso do Brasil (-03:00), sem offset no texto,
-// para casar com "Parameters:TimeZone=-0300" no CSV.
+// Formata um instante (UTC) no fuso do Brasil, com o offset no proprio texto
+// (ex: "2026-08-22 11:00:00-03:00"). O Data Manager aceita o fuso na coluna.
 function fmtTimeBR(iso: string | null): string {
   if (!iso) return "";
   const utc = new Date(iso);
@@ -13,7 +13,7 @@ function fmtTimeBR(iso: string | null): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return (
     `${br.getUTCFullYear()}-${p(br.getUTCMonth() + 1)}-${p(br.getUTCDate())} ` +
-    `${p(br.getUTCHours())}:${p(br.getUTCMinutes())}:${p(br.getUTCSeconds())}`
+    `${p(br.getUTCHours())}:${p(br.getUTCMinutes())}:${p(br.getUTCSeconds())}-03:00`
   );
 }
 
@@ -75,8 +75,8 @@ export async function GET(request: Request) {
   const leads = await listSoldLeads({ from, to, onlyWithGclid: true });
 
   const lines: string[] = [];
-  // Cabecalho no formato de importacao de conversoes offline do Google Ads.
-  lines.push("Parameters:TimeZone=-0300");
+  // Cabecalho como PRIMEIRA linha (o Data Manager le a linha 1 como cabecalho).
+  // O fuso vai dentro de cada Conversion Time, nao numa linha "Parameters".
   lines.push("Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency");
   for (const l of leads) {
     lines.push(
