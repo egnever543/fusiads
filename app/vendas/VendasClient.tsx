@@ -119,7 +119,6 @@ export default function VendasClient({
         <>
           <Card title={`Lead ${lead.id}`}>
             <div>
-              <Row label="gclid" value={lead.gclid} />
               <Row label="Dispositivo" value={lead.device} />
               <Row label="Caminho" value={Array.isArray(lead.path) ? lead.path.join(" › ") : null} />
               <Row label="utm_source" value={lead.utm_source} />
@@ -144,11 +143,6 @@ export default function VendasClient({
                 }
               />
             </div>
-            {!lead.gclid && (
-              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
-                Este lead não tem gclid — não entra no CSV de conversão do Google Ads.
-              </p>
-            )}
           </Card>
 
           {/* Registrar venda */}
@@ -200,7 +194,7 @@ export default function VendasClient({
       {/* Exportar CSV */}
       <Card
         title="Exportar conversões (Google Ads)"
-        hint="Gera o CSV de conversões offline dos leads marcados como vendidos (que têm gclid), pronto para importar no Google Ads."
+        hint="Gera o CSV de conversões offline dos leads marcados como vendidos, pronto para importar no Google Ads."
       >
         <div className="grid grid-cols-2 gap-3">
           <div>
