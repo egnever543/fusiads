@@ -1,6 +1,7 @@
 import { getConfig } from "@/lib/config";
 import FlowTrigger from "./_components/FlowTrigger";
 import ChatFlow from "./_components/ChatFlow";
+import AppTutorial from "./_components/AppTutorial";
 import "./_components/landing.css";
 
 // Le sempre a configuracao mais recente do Supabase.
@@ -105,6 +106,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Tutorial "Como baixar o app" */}
+        <AppTutorial appName={config.appName} appLogoUrl={config.appLogoUrl} />
 
         {/* Pricing Section */}
         <section className="pricing">
