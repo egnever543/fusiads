@@ -62,6 +62,8 @@ export async function saveConfigAction(
     googleAdsId: String(formData.get("googleAdsId") ?? "").trim(),
     conversionLabel: String(formData.get("conversionLabel") ?? "").trim(),
     offlineConversionName: String(formData.get("offlineConversionName") ?? "").trim(),
+    appName: String(formData.get("appName") ?? "").trim(),
+    appLogoUrl: String(formData.get("appLogoUrl") ?? "").trim(),
   });
 
   const result = await saveConfig(config);

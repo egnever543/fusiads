@@ -131,6 +131,37 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         </div>
       </Card>
 
+      {/* --- App (tutorial de download) --- */}
+      <Card
+        title="App (tutorial de download)"
+        hint="Usado na seção 'Como baixar o app' da landing."
+      >
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Nome do app</label>
+          <input
+            name="appName"
+            defaultValue={initial.appName}
+            placeholder="Ex: PREMIUM TV"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            É o nome que o cliente vai buscar na loja da TV/celular.
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">URL da logo do app</label>
+          <input
+            name="appLogoUrl"
+            defaultValue={initial.appLogoUrl}
+            placeholder="https://.../logo.png"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Link de uma imagem da logo/ícone do app (ajuda o cliente a reconhecer na loja).
+          </p>
+        </div>
+      </Card>
+
       <div className="flex items-center gap-4">
         <SubmitButton />
         {state.ok && <span className="text-sm text-green-700">Salvo com sucesso!</span>}

@@ -26,6 +26,10 @@ export type SiteConfig = {
   // Nome EXATO da acao de conversao offline no Google Ads. Vai na coluna
   // "Conversion Name" do CSV exportado em /vendas.
   offlineConversionName: string;
+  // Nome do app (usado no tutorial "Como baixar o app").
+  appName: string;
+  // URL da logo do app (mostrada no tutorial para o cliente reconhecer o icone).
+  appLogoUrl: string;
 };
 
 export const DEFAULT_CONFIG: SiteConfig = {
@@ -39,6 +43,8 @@ export const DEFAULT_CONFIG: SiteConfig = {
   googleAdsId: "AW-17909477604",
   conversionLabel: "",
   offlineConversionName: "",
+  appName: "PREMIUM TV",
+  appLogoUrl: "https://cinebrasil.top/wp-content/uploads/2025/10/IPTV-MODELO02-B02-1024x1024-1.webp",
 };
 
 // Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
@@ -76,6 +82,8 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
     googleAdsId: sanitizeAdsId(merged.googleAdsId),
     conversionLabel: sanitizeConversionLabel(merged.conversionLabel),
     offlineConversionName: String(merged.offlineConversionName ?? "").trim(),
+    appName: String(merged.appName ?? "").trim() || DEFAULT_CONFIG.appName,
+    appLogoUrl: String(merged.appLogoUrl ?? "").trim(),
     phones: normalizedPhones,
   };
 }
