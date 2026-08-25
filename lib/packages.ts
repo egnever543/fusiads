@@ -1,8 +1,9 @@
 // ==========================================================================
 // Catálogo de pacotes de renovação.
 //
-// ✅ PREÇOS reais (padronizados para todos os clientes).
-// ⚠️ id (packageId do Sigma) ainda é PLACEHOLDER — trocar pelos IDs reais.
+// ✅ PREÇOS e packageIds reais (padronizados para todos os clientes).
+//   - id:         packageId do Sigma enviado na renovação.
+//   - priceCents: preço de VENDA cobrado no PIX (em centavos).
 //
 // A renovação detecta o plano atual do cliente (telas + adulto) e mostra só
 // as durações compatíveis.
@@ -11,7 +12,7 @@
 export type DurationKey = "mensal" | "bimestral" | "trimestral" | "semestral" | "anual";
 
 export type Package = {
-  id: string; // packageId no Sigma (⚠️ trocar pelos IDs reais)
+  id: string; // packageId no Sigma
   duration: DurationKey;
   durationLabel: string;
   months: number;
@@ -22,32 +23,32 @@ export type Package = {
 
 export const packages: Package[] = [
   // ================= SEM ADULTO · 1 TELA =================
-  { id: "SIGMA_PKG_1T_MENSAL", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 1, adult: false, priceCents: 2500 },
-  { id: "SIGMA_PKG_1T_BIMESTRAL", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 1, adult: false, priceCents: 4000 },
-  { id: "SIGMA_PKG_1T_TRIMESTRAL", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 1, adult: false, priceCents: 6500 },
-  { id: "SIGMA_PKG_1T_SEMESTRAL", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 1, adult: false, priceCents: 10000 },
-  { id: "SIGMA_PKG_1T_ANUAL", duration: "anual", durationLabel: "Anual", months: 12, telas: 1, adult: false, priceCents: 15000 },
+  { id: "z2BDvoWrkj", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 1, adult: false, priceCents: 2500 },
+  { id: "EMeWepDnN9", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 1, adult: false, priceCents: 4000 },
+  { id: "qK4WrQDeNj", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 1, adult: false, priceCents: 6500 },
+  { id: "7loL7aMWXM", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 1, adult: false, priceCents: 10000 },
+  { id: "we6Wnw1K8N", duration: "anual", durationLabel: "Anual", months: 12, telas: 1, adult: false, priceCents: 15000 },
 
   // ================= SEM ADULTO · 2 TELAS =================
-  { id: "SIGMA_PKG_2T_MENSAL", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 2, adult: false, priceCents: 3500 },
-  { id: "SIGMA_PKG_2T_BIMESTRAL", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 2, adult: false, priceCents: 5000 },
-  { id: "SIGMA_PKG_2T_TRIMESTRAL", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 2, adult: false, priceCents: 7500 },
-  { id: "SIGMA_PKG_2T_SEMESTRAL", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 2, adult: false, priceCents: 12500 },
-  { id: "SIGMA_PKG_2T_ANUAL", duration: "anual", durationLabel: "Anual", months: 12, telas: 2, adult: false, priceCents: 19000 },
+  { id: "kRXDgwDexV", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 2, adult: false, priceCents: 3500 },
+  { id: "PkaL4dLgrz", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 2, adult: false, priceCents: 5000 },
+  { id: "nVrW8oDKaN", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 2, adult: false, priceCents: 7500 },
+  { id: "BV4D3rrLaq", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 2, adult: false, priceCents: 12500 },
+  { id: "rlKWOw3Wzo", duration: "anual", durationLabel: "Anual", months: 12, telas: 2, adult: false, priceCents: 19000 },
 
   // ================= COM ADULTO · 1 TELA =================
-  { id: "SIGMA_PKG_1T_MENSAL_ADULT", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 1, adult: true, priceCents: 3370 },
-  { id: "SIGMA_PKG_1T_BIMESTRAL_ADULT", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 1, adult: true, priceCents: 5400 },
-  { id: "SIGMA_PKG_1T_TRIMESTRAL_ADULT", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 1, adult: true, priceCents: 8775 },
-  { id: "SIGMA_PKG_1T_SEMESTRAL_ADULT", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 1, adult: true, priceCents: 13500 },
-  { id: "SIGMA_PKG_1T_ANUAL_ADULT", duration: "anual", durationLabel: "Anual", months: 12, telas: 1, adult: true, priceCents: 20250 },
+  { id: "o231qzL4qz", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 1, adult: true, priceCents: 3370 },
+  { id: "VpKDaJWRAa", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 1, adult: true, priceCents: 5400 },
+  { id: "bOxLAQLZ7a", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 1, adult: true, priceCents: 8775 },
+  { id: "JOALy014wx", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 1, adult: true, priceCents: 13500 },
+  { id: "b8K1x6DvGN", duration: "anual", durationLabel: "Anual", months: 12, telas: 1, adult: true, priceCents: 20250 },
 
   // ================= COM ADULTO · 2 TELAS =================
-  { id: "SIGMA_PKG_2T_MENSAL_ADULT", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 2, adult: true, priceCents: 4725 },
-  { id: "SIGMA_PKG_2T_BIMESTRAL_ADULT", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 2, adult: true, priceCents: 6750 },
-  { id: "SIGMA_PKG_2T_TRIMESTRAL_ADULT", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 2, adult: true, priceCents: 10125 },
-  { id: "SIGMA_PKG_2T_SEMESTRAL_ADULT", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 2, adult: true, priceCents: 16875 },
-  { id: "SIGMA_PKG_2T_ANUAL_ADULT", duration: "anual", durationLabel: "Anual", months: 12, telas: 2, adult: true, priceCents: 25650 },
+  { id: "BKADdn1lrn", duration: "mensal", durationLabel: "Mensal", months: 1, telas: 2, adult: true, priceCents: 4725 },
+  { id: "ryJDzKWgeV", duration: "bimestral", durationLabel: "Bimestral", months: 2, telas: 2, adult: true, priceCents: 6750 },
+  { id: "Yxl1jB1Mjm", duration: "trimestral", durationLabel: "Trimestral", months: 3, telas: 2, adult: true, priceCents: 10125 },
+  { id: "QywDmRWpRJ", duration: "semestral", durationLabel: "Semestral", months: 6, telas: 2, adult: true, priceCents: 16875 },
+  { id: "x2YD0v1QPa", duration: "anual", durationLabel: "Anual", months: 12, telas: 2, adult: true, priceCents: 25650 },
 ];
 
 export function getPackage(id: string): Package | undefined {
