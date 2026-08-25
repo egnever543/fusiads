@@ -131,6 +131,17 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         </div>
       </Card>
 
+      {/* --- Formas de pagamento (checkout de renovação) --- */}
+      <Card
+        title="Formas de pagamento (checkout)"
+        hint="Usadas na página /checkout/[usuario]. As chaves secretas ficam nas variáveis de ambiente, não aqui."
+      >
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="pixEnabled" defaultChecked={initial.pixEnabled} className="h-4 w-4" />
+          PIX (FastDePix) ativo
+        </label>
+      </Card>
+
       <div className="flex items-center gap-4">
         <SubmitButton />
         {state.ok && <span className="text-sm text-green-700">Salvo com sucesso!</span>}

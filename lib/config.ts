@@ -26,6 +26,8 @@ export type SiteConfig = {
   // Nome EXATO da acao de conversao offline no Google Ads. Vai na coluna
   // "Conversion Name" do CSV exportado em /vendas.
   offlineConversionName: string;
+  // Forma de pagamento PIX (FastDePix) ligada no checkout de renovação.
+  pixEnabled: boolean;
 };
 
 export const DEFAULT_CONFIG: SiteConfig = {
@@ -39,6 +41,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   googleAdsId: "AW-17909477604",
   conversionLabel: "",
   offlineConversionName: "",
+  pixEnabled: false,
 };
 
 // Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
@@ -76,6 +79,7 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
     googleAdsId: sanitizeAdsId(merged.googleAdsId),
     conversionLabel: sanitizeConversionLabel(merged.conversionLabel),
     offlineConversionName: String(merged.offlineConversionName ?? "").trim(),
+    pixEnabled: Boolean(merged.pixEnabled),
     phones: normalizedPhones,
   };
 }
@@ -108,6 +112,11 @@ function writeClient() {
     auth: { persistSession: false },
     global: { fetch: noStoreFetch },
   });
+}
+
+// Client de escrita (service_role) para outros módulos do servidor.
+export function getServiceClient() {
+  return writeClient();
 }
 
 // ==========================================================================
