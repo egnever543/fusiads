@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const gclid = body?.gclid ? String(body.gclid) : null;
 
   const config = await getConfig();
-  if (!config.pixEnabled) {
+  if (!config.payments.pix) {
     return NextResponse.json({ error: "Pagamento PIX indisponível." }, { status: 400 });
   }
   if (!pixConfigured() || !sigmaConfigured()) {
@@ -30,11 +30,6 @@ export async function POST(request: Request) {
   const customer = await findCustomerByUsername(username);
   if (!customer) {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
-  }
-
-  // Garante que o pacote escolhido é do mesmo tipo do plano atual (telas + adulto).
-  if (pkg.telas !== customer.connections || pkg.adult !== customer.package_is_adult) {
-    return NextResponse.json({ error: "Pacote incompatível com o plano atual." }, { status: 400 });
   }
 
   const host = request.headers.get("host");

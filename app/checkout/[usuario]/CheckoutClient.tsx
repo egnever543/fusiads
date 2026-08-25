@@ -1,28 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-type PkgView = { id: string; durationLabel: string; months: number; priceCents: number };
+type PkgView = {
+  id: string;
+  duration: string;
+  durationLabel: string;
+  months: number;
+  telas: 1 | 2;
+  adult: boolean;
+  priceCents: number;
+};
 
 type Props = {
   username: string;
   expiresAt: string | null;
   status: string;
   packageName: string | null;
-  telas: 1 | 2;
-  adult: boolean;
+  initialTelas: 1 | 2;
+  initialAdult: boolean;
   packages: PkgView[];
   pixEnabled: boolean;
   googleAdsId: string;
   conversionLabel: string;
+  whatsapp: string;
 };
 
-type Pix = {
-  id: number | string;
-  amount: number;
-  qrCode: string | null;
-  qrCodeText: string | null;
-};
+type Pix = { id: number | string; amount: number; qrCode: string | null; qrCodeText: string | null };
 
 declare global {
   interface Window {
@@ -33,17 +37,17 @@ declare global {
 function reais(cents: number): string {
   return (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("pt-BR");
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
 }
 
 export default function CheckoutClient(props: Props) {
-  const { username, expiresAt, status, packageName, telas, adult, packages, pixEnabled } = props;
+  const { username, expiresAt, status, packageName, packages, pixEnabled, whatsapp } = props;
 
+  const [telas, setTelas] = useState<1 | 2>(props.initialTelas);
+  const [adult, setAdult] = useState<boolean>(props.initialAdult);
   const [pix, setPix] = useState<Pix | null>(null);
   const [selected, setSelected] = useState<PkgView | null>(null);
   const [loading, setLoading] = useState(false);
@@ -51,6 +55,15 @@ export default function CheckoutClient(props: Props) {
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
   const conversionFired = useRef(false);
+
+  const lista = useMemo(
+    () => packages.filter((p) => p.telas === telas && p.adult === adult).sort((a, b) => a.months - b.months),
+    [packages, telas, adult]
+  );
+  const mensalMonthly = useMemo(() => {
+    const m = lista.find((p) => p.duration === "mensal");
+    return m ? m.priceCents / m.months : null;
+  }, [lista]);
 
   function gclidFromUrl(): string | null {
     try {
@@ -74,7 +87,6 @@ export default function CheckoutClient(props: Props) {
       const d = await r.json();
       if (!r.ok) {
         setError(d?.error ?? "Erro ao gerar o PIX.");
-        setLoading(false);
         return;
       }
       setPix({ id: d.id, amount: d.amount, qrCode: d.qrCode, qrCodeText: d.qrCodeText });
@@ -85,7 +97,6 @@ export default function CheckoutClient(props: Props) {
     }
   }
 
-  // Polling do status a cada 4s → ao confirmar, renova e dispara a conversão.
   useEffect(() => {
     if (!pix?.id || paid) return;
     let ativo = true;
@@ -105,7 +116,6 @@ export default function CheckoutClient(props: Props) {
           }).catch(() => {});
           if (!ativo) return;
           setPaid(true);
-          // Conversão Google Ads com o valor real (uma única vez).
           if (
             !conversionFired.current &&
             props.googleAdsId &&
@@ -122,7 +132,7 @@ export default function CheckoutClient(props: Props) {
           }
         }
       } catch {
-        /* ignora e tenta de novo */
+        /* tenta de novo */
       }
     }, 4000);
     return () => {
@@ -133,78 +143,139 @@ export default function CheckoutClient(props: Props) {
 
   function copiar() {
     if (!pix?.qrCodeText) return;
-    navigator.clipboard?.writeText(pix.qrCodeText).then(
-      () => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      },
-      () => {}
-    );
+    navigator.clipboard?.writeText(pix.qrCodeText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   }
 
-  const planoLabel = `${telas} tela${telas > 1 ? "s" : ""}${adult ? " · +18" : ""}`;
+  const waLink = whatsapp
+    ? `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Olá! Quero renovar meu plano.\nUsuário: ${username}`)}`
+    : null;
+
+  const pill = (activeCond: boolean) =>
+    `rounded-full px-5 py-2 text-sm font-semibold transition ${
+      activeCond ? "bg-blue-600 text-white shadow" : "text-slate-600 hover:text-slate-900"
+    }`;
 
   return (
-    <main className="min-h-screen bg-slate-100 py-10">
-      <div className="mx-auto max-w-lg px-4">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-800">Renovar assinatura</h1>
-          <div className="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-            <div className="flex justify-between py-1">
-              <span>Usuário</span>
-              <strong className="text-slate-800">{username}</strong>
+    <main className="min-h-screen bg-slate-50 py-10">
+      <div className="mx-auto max-w-5xl px-4">
+        {/* Cabeçalho do cliente */}
+        <div className="mx-auto max-w-md rounded-2xl bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 text-sm">
+            <span className="text-slate-500">
+              Usuário: <strong className="text-slate-800">{username}</strong>
+            </span>
+            <span className="text-slate-500">
+              Vence em: <strong className="text-slate-800">{fmtDate(expiresAt)}</strong>
+            </span>
+            <span className={status === "EXPIRED" ? "font-semibold text-red-600" : "font-semibold text-green-700"}>
+              {status === "EXPIRED" ? "Expirado" : status === "ACTIVE" ? "Ativo" : status}
+            </span>
+          </div>
+        </div>
+
+        {/* Título */}
+        <div className="mt-8 text-center">
+          <h1 className="text-3xl font-extrabold text-slate-900">Escolha sua licença</h1>
+          <p className="mt-2 text-slate-500">
+            Renovação na hora — seu acesso continua com o mesmo login e senha.
+          </p>
+        </div>
+
+        {/* Seletores */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+          <div className="text-center">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Quantas telas?</div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
+              <button className={pill(telas === 1)} onClick={() => setTelas(1)}>1 tela</button>
+              <button className={pill(telas === 2)} onClick={() => setTelas(2)}>2 telas</button>
             </div>
-            <div className="flex justify-between py-1">
-              <span>Plano atual</span>
-              <span className="text-slate-800">{packageName || planoLabel}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span>Vence em</span>
-              <span className="text-slate-800">{fmtDate(expiresAt)}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span>Status</span>
-              <span className={status === "EXPIRED" ? "text-red-600" : "text-green-700"}>
-                {status === "EXPIRED" ? "Expirado" : status === "ACTIVE" ? "Ativo" : status}
-              </span>
+          </div>
+          <div className="text-center">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Conteúdo adulto?</div>
+            <div className="inline-flex rounded-full border border-slate-200 bg-white p-1">
+              <button className={pill(!adult)} onClick={() => setAdult(false)}>Sem adulto</button>
+              <button className={pill(adult)} onClick={() => setAdult(true)}>Com adulto</button>
             </div>
           </div>
         </div>
 
+        {/* Cards de planos */}
         {!pixEnabled ? (
-          <div className="mt-6 rounded-2xl bg-amber-50 p-6 text-center text-amber-700">
+          <div className="mx-auto mt-8 max-w-md rounded-2xl bg-amber-50 p-6 text-center text-amber-700">
             Pagamento indisponível no momento. Fale com o atendimento.
           </div>
         ) : (
-          <div className="mt-6 space-y-3">
-            <h2 className="text-lg font-semibold text-slate-800">Escolha a duração</h2>
-            {packages.length === 0 && (
-              <p className="text-sm text-slate-500">Nenhum pacote disponível para este plano.</p>
-            )}
-            {packages.map((pkg) => (
-              <div
-                key={pkg.id}
-                className="flex items-center justify-between rounded-2xl bg-white p-5 shadow-sm"
-              >
-                <div>
-                  <div className="font-semibold text-slate-800">{pkg.durationLabel}</div>
-                  <div className="text-sm text-slate-500">
-                    equivale a R$ {reais(Math.round(pkg.priceCents / pkg.months))}/mês
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {lista.map((pkg) => {
+              const monthly = pkg.priceCents / pkg.months;
+              const economia = mensalMonthly ? Math.round((1 - monthly / mensalMonthly) * 100) : 0;
+              const destaque = pkg.duration === "anual";
+              return (
+                <div
+                  key={pkg.id}
+                  className={`flex flex-col rounded-2xl bg-white p-6 shadow-sm ${
+                    destaque ? "ring-2 ring-blue-600" : "border border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <h3 className="text-lg font-bold text-slate-900">{pkg.durationLabel}</h3>
+                    {economia > 0 && (
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                        Economize {economia}%
+                      </span>
+                    )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-slate-900">R$ {reais(pkg.priceCents)}</div>
+                  <div className="mt-3">
+                    <span className="align-top text-sm text-slate-500">R$ </span>
+                    <span className="text-4xl font-extrabold text-slate-900">{reais(pkg.priceCents)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-400">
+                    equivale a R$ {reais(Math.round(monthly))}/mês
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm text-slate-600">
+                    <li>✓ {pkg.telas} tela{pkg.telas > 1 ? "s" : ""} simultânea{pkg.telas > 1 ? "s" : ""}</li>
+                    <li>✓ {pkg.adult ? "Com" : "Sem"} conteúdo adulto</li>
+                    <li>✓ Ativação imediata</li>
+                    <li>✓ Suporte no WhatsApp</li>
+                  </ul>
                   <button
                     onClick={() => pagar(pkg)}
                     disabled={loading}
-                    className="mt-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60"
+                    className={`mt-6 w-full rounded-full px-4 py-3 text-sm font-semibold transition disabled:opacity-60 ${
+                      destaque
+                        ? "bg-blue-600 text-white hover:bg-blue-700"
+                        : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    }`}
                   >
-                    {loading && selected?.id === pkg.id ? "Gerando..." : "Pagar com PIX"}
+                    {loading && selected?.id === pkg.id ? "Gerando..." : `Assinar ${pkg.durationLabel}`}
                   </button>
                 </div>
-              </div>
-            ))}
-            {error && <p className="text-sm text-red-600">{error}</p>}
+              );
+            })}
+            {lista.length === 0 && (
+              <p className="col-span-full text-center text-sm text-slate-500">
+                Nenhum pacote disponível para esta combinação.
+              </p>
+            )}
+          </div>
+        )}
+
+        {error && <p className="mt-4 text-center text-sm text-red-600">{error}</p>}
+
+        {/* Comprar pelo WhatsApp */}
+        {waLink && (
+          <div className="mt-8 text-center">
+            <a
+              href={waLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-green-500 px-8 py-3 font-semibold text-white shadow hover:bg-green-600"
+            >
+              💬 Comprar pelo WhatsApp
+            </a>
           </div>
         )}
       </div>

@@ -26,8 +26,13 @@ export type SiteConfig = {
   // Nome EXATO da acao de conversao offline no Google Ads. Vai na coluna
   // "Conversion Name" do CSV exportado em /vendas.
   offlineConversionName: string;
-  // Forma de pagamento PIX (FastDePix) ligada no checkout de renovação.
-  pixEnabled: boolean;
+  // Formas de pagamento do checkout (extensível — novos métodos entram aqui).
+  payments: PaymentMethods;
+};
+
+export type PaymentMethods = {
+  pix: boolean;
+  // futuros métodos: card?: boolean; boleto?: boolean; ...
 };
 
 export const DEFAULT_CONFIG: SiteConfig = {
@@ -41,7 +46,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   googleAdsId: "AW-17909477604",
   conversionLabel: "",
   offlineConversionName: "",
-  pixEnabled: false,
+  payments: { pix: false },
 };
 
 // Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
@@ -74,12 +79,19 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
       label: p.label ?? `Número ${i + 1}`,
     });
   }
+  // Formas de pagamento: aceita o objeto novo (payments.pix) e migra o
+  // formato antigo (pixEnabled) automaticamente.
+  const legacyPix = (raw as { pixEnabled?: unknown } | null | undefined)?.pixEnabled;
+  const payments: PaymentMethods = {
+    pix: Boolean(merged.payments?.pix ?? legacyPix ?? false),
+  };
+
   return {
     ...merged,
     googleAdsId: sanitizeAdsId(merged.googleAdsId),
     conversionLabel: sanitizeConversionLabel(merged.conversionLabel),
     offlineConversionName: String(merged.offlineConversionName ?? "").trim(),
-    pixEnabled: Boolean(merged.pixEnabled),
+    payments,
     phones: normalizedPhones,
   };
 }

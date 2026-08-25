@@ -62,7 +62,7 @@ export async function saveConfigAction(
     googleAdsId: String(formData.get("googleAdsId") ?? "").trim(),
     conversionLabel: String(formData.get("conversionLabel") ?? "").trim(),
     offlineConversionName: String(formData.get("offlineConversionName") ?? "").trim(),
-    pixEnabled: formData.get("pixEnabled") === "on",
+    payments: { pix: formData.get("payment_pix") === "on" },
   });
 
   const result = await saveConfig(config);
