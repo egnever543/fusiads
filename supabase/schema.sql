@@ -69,3 +69,27 @@ create index if not exists leads_created_at_idx on public.leads (created_at desc
 
 -- RLS ligado; escrita apenas via service_role (servidor). Sem policies anon.
 alter table public.leads enable row level security;
+
+-- ==========================================================================
+-- Renovacoes (checkout PIX). Uma linha por cobranca; o provisionamento usa
+-- claim atomico (provisioning/provisioned) para renovar uma unica vez.
+-- ==========================================================================
+create table if not exists public.renewals (
+  transaction_id text primary key,
+  username       text not null,
+  customer_id    text not null,
+  package_id     text not null,
+  package_label  text,
+  amount         numeric not null,
+  status         text not null default 'pending',
+  provisioned    boolean not null default false,
+  provisioning   boolean not null default false,
+  gclid          text,
+  created_at     timestamptz not null default now(),
+  renewed_at     timestamptz
+);
+create index if not exists renewals_username_idx on public.renewals (username);
+create index if not exists renewals_created_at_idx on public.renewals (created_at desc);
+
+alter table public.renewals enable row level security;
+-- Escrita/leitura apenas via service_role (servidor). Sem policies anon.
