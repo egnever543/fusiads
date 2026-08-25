@@ -1,6 +1,6 @@
 import { getConfig } from "@/lib/config";
 import { findCustomerByUsername, sigmaConfigured } from "@/lib/sigma";
-import { listPackages } from "@/lib/packages";
+import { packages } from "@/lib/packages";
 import CheckoutClient from "./CheckoutClient";
 
 export const dynamic = "force-dynamic";
@@ -35,28 +35,30 @@ export default async function CheckoutPage({ params }: { params: { usuario: stri
   }
 
   const telas = (customer.connections === 2 ? 2 : 1) as 1 | 2;
-  const pkgs = listPackages(telas, customer.package_is_adult);
+  const whatsapp = config.phones.find((p) => p.enabled && p.number)?.number ?? "";
 
-  // ATENÇÃO: só enviamos dados NÃO sensíveis ao navegador (sem senha, sem o id
-  // interno do cliente). A rota /api/pix resolve o cliente pelo username no
-  // servidor para renovar.
+  // ATENÇÃO: só dados NÃO sensíveis vão ao navegador (sem senha/id interno).
   return (
     <CheckoutClient
       username={customer.username}
       expiresAt={customer.expires_at}
       status={customer.status}
       packageName={customer.package}
-      telas={telas}
-      adult={customer.package_is_adult}
-      packages={pkgs.map((p) => ({
+      initialTelas={telas}
+      initialAdult={customer.package_is_adult}
+      packages={packages.map((p) => ({
         id: p.id,
+        duration: p.duration,
         durationLabel: p.durationLabel,
         months: p.months,
+        telas: p.telas,
+        adult: p.adult,
         priceCents: p.priceCents,
       }))}
-      pixEnabled={config.pixEnabled}
+      pixEnabled={config.payments.pix}
       googleAdsId={config.googleAdsId}
       conversionLabel={config.conversionLabel}
+      whatsapp={whatsapp}
     />
   );
 }

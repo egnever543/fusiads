@@ -137,7 +137,7 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
         hint="Usadas na página /checkout/[usuario]. As chaves secretas ficam nas variáveis de ambiente, não aqui."
       >
         <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input type="checkbox" name="pixEnabled" defaultChecked={initial.pixEnabled} className="h-4 w-4" />
+          <input type="checkbox" name="payment_pix" defaultChecked={initial.payments.pix} className="h-4 w-4" />
           PIX (FastDePix) ativo
         </label>
       </Card>
