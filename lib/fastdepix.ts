@@ -3,8 +3,14 @@
 // A chave é secreta e vem de env (FASTDEPIX_API_KEY) — nunca no código.
 // ==========================================================================
 
+import { getSecret } from "./secrets";
+
 const BASE_URL = process.env.FASTDEPIX_BASE_URL ?? "https://fastdepix.space/api/v1";
-const API_KEY = process.env.FASTDEPIX_API_KEY;
+
+// A chave vem do Supabase (tabela secrets) e cai para a env var como fallback.
+async function getKey(): Promise<string | undefined> {
+  return getSecret("fastdepix_api_key", "FASTDEPIX_API_KEY");
+}
 
 export type PixTransaction = {
   id: number | string;
@@ -15,8 +21,8 @@ export type PixTransaction = {
   expiresAt: string | null;
 };
 
-export function pixConfigured(): boolean {
-  return Boolean(API_KEY);
+export async function pixConfigured(): Promise<boolean> {
+  return Boolean(await getKey());
 }
 
 function mapTx(d: any): PixTransaction {
@@ -36,7 +42,8 @@ export async function createTransaction(params: {
   name?: string;
   notificationUrl?: string;
 }): Promise<PixTransaction> {
-  if (!API_KEY) throw new Error("FASTDEPIX_API_KEY não configurada.");
+  const API_KEY = await getKey();
+  if (!API_KEY) throw new Error("FastDePix não configurada.");
   const body: Record<string, unknown> = { amount: params.amount };
   if (params.phone) body.payer_phone = params.phone.replace(/\D/g, "");
   if (params.name) body.user = { name: params.name };
@@ -54,7 +61,8 @@ export async function createTransaction(params: {
 }
 
 export async function getTransaction(id: number | string): Promise<PixTransaction> {
-  if (!API_KEY) throw new Error("FASTDEPIX_API_KEY não configurada.");
+  const API_KEY = await getKey();
+  if (!API_KEY) throw new Error("FastDePix não configurada.");
   const res = await fetch(`${BASE_URL}/transactions/${id}`, {
     headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
     cache: "no-store",

@@ -9,6 +9,7 @@ import {
   isAuthenticated,
 } from "@/lib/auth";
 import { saveConfig, normalizeConfig, type SiteConfig, type PhoneEntry } from "@/lib/config";
+import { saveSecrets } from "@/lib/secrets";
 
 // --- Login ---
 export async function loginAction(formData: FormData) {
@@ -67,5 +68,14 @@ export async function saveConfigAction(
 
   const result = await saveConfig(config);
   if (!result.ok) return { ok: false, error: result.error };
+
+  // Token da FastDePix: guardado na tabela protegida `secrets` (nunca em
+  // site_config). Só sobrescreve se o campo veio preenchido.
+  const fastdepixToken = String(formData.get("fastdepix_token") ?? "").trim();
+  if (fastdepixToken) {
+    const s = await saveSecrets({ fastdepix_api_key: fastdepixToken });
+    if (!s.ok) return { ok: false, error: `Config salva, mas o token falhou: ${s.error}` };
+  }
+
   return { ok: true, savedAt: Date.now() };
 }

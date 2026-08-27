@@ -30,7 +30,13 @@ function Card({ title, hint, children }: { title: string; hint?: string; childre
   );
 }
 
-export default function AdminForm({ initial }: { initial: SiteConfig }) {
+export default function AdminForm({
+  initial,
+  secrets,
+}: {
+  initial: SiteConfig;
+  secrets: { fastdepix: boolean };
+}) {
   const [state, formAction] = useFormState<SaveState, FormData>(saveConfigAction, {});
 
   return (
@@ -140,6 +146,24 @@ export default function AdminForm({ initial }: { initial: SiteConfig }) {
           <input type="checkbox" name="payment_pix" defaultChecked={initial.payments.pix} className="h-4 w-4" />
           PIX (FastDePix) ativo
         </label>
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Token da FastDePix{" "}
+            <span className={secrets.fastdepix ? "text-green-600" : "text-slate-400"}>
+              ({secrets.fastdepix ? "configurado" : "não configurado"})
+            </span>
+          </label>
+          <input
+            type="password"
+            name="fastdepix_token"
+            autoComplete="off"
+            placeholder={secrets.fastdepix ? "•••••••• (deixe em branco para manter)" : "cole o token aqui"}
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Guardado de forma segura no Supabase (tabela protegida), lido só no servidor. Deixe em branco para não alterar.
+          </p>
+        </div>
       </Card>
 
       <div className="flex items-center gap-4">

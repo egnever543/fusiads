@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
+import { getSecretsStatus } from "@/lib/secrets";
 import { logoutAction } from "./actions";
 import AdminForm from "./AdminForm";
 
@@ -10,6 +11,7 @@ export default async function AdminPage() {
   if (!isAuthenticated()) redirect("/admin/login");
 
   const config = await getConfig();
+  const secrets = await getSecretsStatus();
 
   return (
     <main className="min-h-screen bg-slate-100 py-10">
@@ -34,7 +36,7 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <AdminForm initial={config} />
+        <AdminForm initial={config} secrets={secrets} />
       </div>
     </main>
   );

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (!config.payments.pix) {
     return NextResponse.json({ error: "Pagamento PIX indisponível." }, { status: 400 });
   }
-  if (!pixConfigured() || !sigmaConfigured()) {
+  if (!(await pixConfigured()) || !sigmaConfigured()) {
     return NextResponse.json({ error: "Pagamento não configurado." }, { status: 500 });
   }
 
