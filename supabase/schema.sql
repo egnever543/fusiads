@@ -93,3 +93,19 @@ create index if not exists renewals_created_at_idx on public.renewals (created_a
 
 alter table public.renewals enable row level security;
 -- Escrita/leitura apenas via service_role (servidor). Sem policies anon.
+
+-- ==========================================================================
+-- Segredos (tokens de integração — ex: FastDePix). Guardados em UMA linha
+-- (id = 1) numa coluna JSONB. RLS ligado e SEM policies: só a chave
+-- service_role (servidor) le/grava. NUNCA exposto ao navegador.
+-- Diferente de site_config, esta tabela NAO tem leitura publica.
+-- ==========================================================================
+create table if not exists public.secrets (
+  id         integer primary key default 1,
+  data       jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now(),
+  constraint secrets_singleton check (id = 1)
+);
+insert into public.secrets (id, data) values (1, '{}'::jsonb) on conflict (id) do nothing;
+alter table public.secrets enable row level security;
+-- Sem policies de propósito: só o service_role (que ignora RLS) tem acesso.
