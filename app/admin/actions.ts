@@ -51,7 +51,7 @@ export async function saveConfigAction(
   for (let i = 0; i < 4; i++) {
     phones.push({
       number: String(formData.get(`phone_${i}_number`) ?? ""),
-      weight: Number(formData.get(`phone_${i}_weight`) ?? 1),
+      percent: Number(formData.get(`phone_${i}_percent`) ?? 0),
       enabled: formData.get(`phone_${i}_enabled`) === "on",
       label: String(formData.get(`phone_${i}_label`) ?? `Número ${i + 1}`),
     });

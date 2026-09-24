@@ -25,10 +25,12 @@ declare global {
 function pickPhone(phones: PhoneEntry[]): PhoneEntry | null {
   const active = phones.filter((p) => p.enabled && p.number);
   if (active.length === 0) return null;
-  const total = active.reduce((sum, p) => sum + (p.weight > 0 ? p.weight : 1), 0);
+  const total = active.reduce((sum, p) => sum + (p.percent > 0 ? p.percent : 0), 0);
+  // Se ninguém tem porcentagem (>0), divide igualmente entre os ativos.
+  if (total <= 0) return active[Math.floor(Math.random() * active.length)];
   let r = Math.random() * total;
   for (const p of active) {
-    r -= p.weight > 0 ? p.weight : 1;
+    r -= p.percent > 0 ? p.percent : 0;
     if (r <= 0) return p;
   }
   return active[active.length - 1];

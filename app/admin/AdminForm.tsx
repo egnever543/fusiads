@@ -44,7 +44,7 @@ export default function AdminForm({
       {/* --- Numeros de WhatsApp --- */}
       <Card
         title="Números de WhatsApp (divisão de tráfego)"
-        hint="Até 4 números. O peso define a proporção de cliques que cada um recebe (ex: pesos 2 e 1 = 66% e 33%). Use o formato internacional só com dígitos: 55 + DDD + número."
+        hint="Até 4 números. A % define quanto do tráfego vai para cada um (ex: 70 e 30 = 70% e 30%). A soma dos ativos deve dar 100%. Use o formato internacional só com dígitos: 55 + DDD + número."
       >
         {initial.phones.map((phone, i) => (
           <div key={i} className="rounded-xl border border-slate-200 p-4">
@@ -86,12 +86,13 @@ export default function AdminForm({
                 />
               </div>
               <div className="sm:col-span-1">
-                <label className="block text-xs text-slate-500">Peso</label>
+                <label className="block text-xs text-slate-500">% do tráfego</label>
                 <input
-                  name={`phone_${i}_weight`}
+                  name={`phone_${i}_percent`}
                   type="number"
-                  min={1}
-                  defaultValue={phone.weight}
+                  min={0}
+                  max={100}
+                  defaultValue={phone.percent}
                   className={inputClass}
                 />
               </div>
