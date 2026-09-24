@@ -7,8 +7,9 @@ import { createClient } from "@supabase/supabase-js";
 export type PhoneEntry = {
   // Numero em formato internacional, so digitos. Ex: 5511999998888
   number: string;
-  // Peso relativo para a divisao de trafego. Maior = recebe mais cliques.
-  weight: number;
+  // Porcentagem do trafego que vai para este numero (0 a 100). A soma dos
+  // ativos idealmente da 100; se nao der, a divisao e proporcional mesmo assim.
+  percent: number;
   enabled: boolean;
   // Rotulo opcional so pra voce se organizar no painel (ex: "Vendedor 1").
   label?: string;
@@ -37,10 +38,10 @@ export type PaymentMethods = {
 
 export const DEFAULT_CONFIG: SiteConfig = {
   phones: [
-    { number: "", weight: 1, enabled: false, label: "Número 1" },
-    { number: "", weight: 1, enabled: false, label: "Número 2" },
-    { number: "", weight: 1, enabled: false, label: "Número 3" },
-    { number: "", weight: 1, enabled: false, label: "Número 4" },
+    { number: "", percent: 100, enabled: false, label: "Número 1" },
+    { number: "", percent: 0, enabled: false, label: "Número 2" },
+    { number: "", percent: 0, enabled: false, label: "Número 3" },
+    { number: "", percent: 0, enabled: false, label: "Número 4" },
   ],
   whatsappMessage: "Olá! Quero testar a PREMIUM TV.",
   googleAdsId: "AW-17909477604",
@@ -71,10 +72,13 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
   const phones = Array.isArray(raw?.phones) ? raw!.phones : DEFAULT_CONFIG.phones;
   const normalizedPhones: PhoneEntry[] = [];
   for (let i = 0; i < 4; i++) {
-    const p = phones[i] ?? {};
+    const p = (phones[i] ?? {}) as Partial<PhoneEntry> & { weight?: number };
+    // Aceita "percent" (novo) e migra "weight" (antigo). Limita a 0..100.
+    const rawPct = p.percent ?? p.weight;
+    const pct = Number.isFinite(Number(rawPct)) ? Math.min(100, Math.max(0, Number(rawPct))) : 0;
     normalizedPhones.push({
       number: String(p.number ?? "").replace(/\D/g, ""),
-      weight: Number.isFinite(Number(p.weight)) && Number(p.weight) > 0 ? Number(p.weight) : 1,
+      percent: pct,
       enabled: Boolean(p.enabled),
       label: p.label ?? `Número ${i + 1}`,
     });
