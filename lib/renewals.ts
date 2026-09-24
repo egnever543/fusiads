@@ -16,12 +16,14 @@ export type Renewal = {
   provisioned: boolean;
   provisioning: boolean;
   gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
   created_at: string | null;
   renewed_at: string | null;
 };
 
 const COLS =
-  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, created_at, renewed_at";
+  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, gbraid, wbraid, created_at, renewed_at";
 
 export async function saveRenewalInit(input: {
   transactionId: string;
@@ -31,6 +33,8 @@ export async function saveRenewalInit(input: {
   packageLabel?: string;
   amount: number;
   gclid?: string | null;
+  gbraid?: string | null;
+  wbraid?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   const client = getServiceClient();
   if (!client) return { ok: false, error: "Supabase não configurado." };
@@ -44,11 +48,40 @@ export async function saveRenewalInit(input: {
       amount: input.amount,
       status: "pending",
       gclid: input.gclid ?? null,
+      gbraid: input.gbraid ?? null,
+      wbraid: input.wbraid ?? null,
     },
     { onConflict: "transaction_id" }
   );
   if (error) return { ok: false, error: error.message };
   return { ok: true };
+}
+
+// Lista as renovacoes PAGAS (provisionadas) para o feed de conversoes offline
+// do Google Ads. Filtra pela data do pagamento (renewed_at). Por padrao o feed
+// pede as ultimas 24h; datas explicitas (from/to) ou uma janela em horas.
+export async function listPaidRenewals(opts: {
+  from?: string;
+  to?: string;
+  onlyWithClickId?: boolean;
+}): Promise<Renewal[]> {
+  const client = getServiceClient();
+  if (!client) return [];
+  let query = client
+    .from("renewals")
+    .select(COLS)
+    .eq("provisioned", true)
+    .order("renewed_at", { ascending: true })
+    .limit(5000);
+
+  if (opts.from) query = query.gte("renewed_at", opts.from);
+  if (opts.to) query = query.lte("renewed_at", opts.to);
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+  let rows = data as unknown as Renewal[];
+  if (opts.onlyWithClickId) rows = rows.filter((r) => r.gclid || r.gbraid || r.wbraid);
+  return rows;
 }
 
 export async function getRenewal(transactionId: string): Promise<Renewal | null> {

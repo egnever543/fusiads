@@ -65,11 +65,20 @@ export default function CheckoutClient(props: Props) {
     return m ? m.priceCents / m.months : null;
   }, [lista]);
 
-  function gclidFromUrl(): string | null {
+  // Captura os identificadores de clique do Google Ads da URL do checkout.
+  // Para a atribuição funcionar, o link enviado ao cliente precisa conter o
+  // parâmetro (ex: /checkout/usuario?gclid=...). gbraid/wbraid são usados em
+  // campanhas de app/iOS no lugar do gclid.
+  function clickIdsFromUrl(): { gclid: string | null; gbraid: string | null; wbraid: string | null } {
     try {
-      return new URLSearchParams(window.location.search).get("gclid");
+      const q = new URLSearchParams(window.location.search);
+      return {
+        gclid: q.get("gclid"),
+        gbraid: q.get("gbraid"),
+        wbraid: q.get("wbraid"),
+      };
     } catch {
-      return null;
+      return { gclid: null, gbraid: null, wbraid: null };
     }
   }
 
@@ -82,7 +91,7 @@ export default function CheckoutClient(props: Props) {
       const r = await fetch("/api/pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, packageId: pkg.id, gclid: gclidFromUrl() }),
+        body: JSON.stringify({ username, packageId: pkg.id, ...clickIdsFromUrl() }),
       });
       const d = await r.json();
       if (!r.ok) {
