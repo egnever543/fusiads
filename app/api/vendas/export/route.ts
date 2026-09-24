@@ -1,11 +1,20 @@
 import { isAuthenticated } from "@/lib/auth";
-import { listSoldLeads, getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/config";
+import { listPaidRenewals } from "@/lib/renewals";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Formata um instante (UTC) no fuso do Brasil, com o offset no proprio texto
-// (ex: "2026-08-22 11:00:00-03:00"). O Data Manager aceita o fuso na coluna.
+// ==========================================================================
+// Feed de conversões offline do Google Ads (importação agendada por HTTPS).
+// A cada chamada devolve as RENOVAÇÕES PAGAS (checkout PIX confirmado) da
+// janela pedida — por padrão as últimas 24h. O Google Ads baixa este .csv
+// periodicamente usando HTTP Basic Auth e credita a conversão pelo clique
+// (gclid/gbraid/wbraid) capturado na URL do checkout.
+// ==========================================================================
+
+// Formata um instante (UTC) no fuso do Brasil, com o offset no próprio texto
+// (ex: "2026-08-22 11:00:00-03:00"). O Google aceita o fuso na coluna.
 function fmtTimeBR(iso: string | null): string {
   if (!iso) return "";
   const utc = new Date(iso);
@@ -51,61 +60,93 @@ export async function GET(request: Request) {
   if (!authorized) {
     return new Response("Não autenticado", {
       status: 401,
-      headers: { "WWW-Authenticate": 'Basic realm="vendas"' },
+      headers: { "WWW-Authenticate": 'Basic realm="conversions"' },
     });
   }
 
+  // Janela de tempo. Prioridade: datas explícitas (from/to) > ?days= > ?hours=.
+  // Sem nenhum parâmetro, usa as últimas 24h (recomendado pelo Google para o
+  // agendamento — a deduplicação por Order ID evita contar duas vezes).
   const fromRaw = url.searchParams.get("from") || undefined;
   const toRaw = url.searchParams.get("to") || undefined;
   const daysRaw = url.searchParams.get("days");
-  // Datas (yyyy-mm-dd) viram intervalo de dia inteiro em UTC.
+  const hoursRaw = url.searchParams.get("hours");
+
   let from = fromRaw ? `${fromRaw}T00:00:00.000Z` : undefined;
   const to = toRaw ? `${toRaw}T23:59:59.999Z` : undefined;
-  // Janela deslizante opcional: ?days=90 => ultimos 90 dias (util no agendamento).
-  if (!from && daysRaw) {
-    const d = Number(daysRaw);
-    if (Number.isFinite(d) && d > 0) {
-      from = new Date(Date.now() - d * 86400000).toISOString();
+  if (!from) {
+    const days = Number(daysRaw);
+    const hours = Number(hoursRaw);
+    if (daysRaw && Number.isFinite(days) && days > 0) {
+      from = new Date(Date.now() - days * 86400000).toISOString();
+    } else if (hoursRaw && Number.isFinite(hours) && hours > 0) {
+      from = new Date(Date.now() - hours * 3600000).toISOString();
+    } else {
+      // Padrão: últimas 24h.
+      from = new Date(Date.now() - 24 * 3600000).toISOString();
     }
   }
 
   const config = await getConfig();
   const conversionName = config.offlineConversionName || "Conversão Offline";
 
-  const leads = await listSoldLeads({ from, to, onlyWithGclid: true });
+  const rows = await listPaidRenewals({ from, to, onlyWithClickId: true });
 
-  const lines: string[] = [];
-  // Cabecalho como PRIMEIRA linha (o Data Manager le a linha 1 como cabecalho).
-  // O fuso vai dentro de cada Conversion Time, nao numa linha "Parameters".
-  lines.push("Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency");
-  for (const l of leads) {
+  // Cabeçalho como PRIMEIRA linha. As colunas seguem o guia; o Google deixa
+  // mapear na importação, então os nomes não precisam bater exatamente.
+  const header = [
+    "Google Click ID",
+    "GBRAID",
+    "WBRAID",
+    "Conversion Name",
+    "Conversion Time",
+    "Conversion Value",
+    "Conversion Currency",
+    "Email",
+    "Phone Number",
+    "Order ID",
+  ];
+  const lines: string[] = [header.join(",")];
+
+  for (const r of rows) {
     lines.push(
       [
-        csvEscape(l.gclid ?? ""),
+        csvEscape(r.gclid ?? ""),
+        csvEscape(r.gbraid ?? ""),
+        csvEscape(r.wbraid ?? ""),
         csvEscape(conversionName),
-        csvEscape(fmtTimeBR(l.sold_at)),
-        csvEscape(l.sale_value != null ? String(l.sale_value) : ""),
-        csvEscape(l.currency ?? "BRL"),
+        csvEscape(fmtTimeBR(r.renewed_at)),
+        csvEscape(Number.isFinite(Number(r.amount)) ? Number(r.amount).toFixed(2) : ""),
+        csvEscape("BRL"),
+        "", // Email (hash SHA-256) — não coletado neste funil.
+        "", // Phone Number (hash SHA-256) — não coletado neste funil.
+        csvEscape(String(r.transaction_id)), // Order ID (deduplicação do Google).
       ].join(",")
     );
   }
 
-  // Sem vendas ainda: inclui UMA linha de exemplo para o Google Ads conseguir
-  // detectar o esquema ao conectar. O gclid falso nao casa com nenhum clique,
-  // entao nao credita conversao. Some assim que houver vendas reais.
-  if (leads.length === 0) {
+  // Sem vendas na janela: inclui UMA linha de exemplo para o Google Ads
+  // conseguir detectar o esquema ao conectar. O gclid falso não casa com
+  // nenhum clique, então não credita conversão. Some quando houver vendas.
+  if (rows.length === 0) {
     lines.push(
       [
         csvEscape("EXEMPLO_SEM_VENDAS"),
+        "",
+        "",
         csvEscape(conversionName),
         csvEscape(fmtTimeBR(new Date().toISOString())),
-        csvEscape("1"),
+        csvEscape("1.00"),
         csvEscape("BRL"),
+        "",
+        "",
+        csvEscape("EXEMPLO-0001"),
       ].join(",")
     );
   }
 
-  const csv = lines.join("\r\n");
+  // CRLF é o mais compatível com o Google.
+  const csv = lines.join("\r\n") + "\r\n";
   const stamp = new Date().toISOString().slice(0, 10);
   return new Response(csv, {
     headers: {

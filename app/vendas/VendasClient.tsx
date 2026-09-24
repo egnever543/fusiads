@@ -90,7 +90,13 @@ export default function VendasClient({
     setSaveMsg(sold ? "Venda registrada! ✅" : "Venda removida.");
   }
 
-  const exportUrl = `/api/vendas/export${from || to ? `?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) }).toString()}` : ""}`;
+  // Sem datas, o endpoint devolve as últimas 24h (padrão do feed agendado).
+  // No download manual queremos o histórico completo, então pedimos uma janela
+  // ampla (?days=3650) quando nenhuma data foi informada.
+  const exportParams = from || to
+    ? new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) }).toString()
+    : "days=3650";
+  const exportUrl = `/api/vendas/export?${exportParams}`;
 
   return (
     <div className="space-y-6">
@@ -195,7 +201,7 @@ export default function VendasClient({
       {/* Exportar CSV */}
       <Card
         title="Exportar conversões (Google Ads)"
-        hint="Gera o CSV de conversões offline dos leads marcados como vendidos, pronto para importar no Google Ads."
+        hint="CSV de conversões offline das renovações pagas (checkout PIX), pronto para importar no Google Ads. O mesmo arquivo é servido em /conversoes.csv para a importação agendada por HTTPS (últimas 24h)."
       >
         <div className="grid grid-cols-2 gap-3">
           <div>

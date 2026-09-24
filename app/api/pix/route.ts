@@ -15,6 +15,8 @@ export async function POST(request: Request) {
   const username = String(body?.username ?? "").trim();
   const packageId = String(body?.packageId ?? "").trim();
   const gclid = body?.gclid ? String(body.gclid) : null;
+  const gbraid = body?.gbraid ? String(body.gbraid) : null;
+  const wbraid = body?.wbraid ? String(body.wbraid) : null;
 
   const config = await getConfig();
   if (!config.payments.pix) {
@@ -51,6 +53,8 @@ export async function POST(request: Request) {
     packageLabel: `${pkg.durationLabel} · ${pkg.telas} tela(s)${pkg.adult ? " · +18" : ""}`,
     amount: priceReais(pkg.priceCents),
     gclid,
+    gbraid,
+    wbraid,
   }).catch((e) => console.error("saveRenewalInit:", e));
 
   return NextResponse.json({
