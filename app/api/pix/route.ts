@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getConfig } from "@/lib/config";
+import { getConfig, getLead } from "@/lib/config";
 import { getPackage, priceReais } from "@/lib/packages";
 import { findCustomerByUsername, sigmaConfigured } from "@/lib/sigma";
 import { createTransaction, getTransaction, pixConfigured } from "@/lib/fastdepix";
@@ -14,9 +14,21 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const username = String(body?.username ?? "").trim();
   const packageId = String(body?.packageId ?? "").trim();
-  const gclid = body?.gclid ? String(body.gclid) : null;
-  const gbraid = body?.gbraid ? String(body.gbraid) : null;
-  const wbraid = body?.wbraid ? String(body.wbraid) : null;
+  let gclid = body?.gclid ? String(body.gclid) : null;
+  let gbraid = body?.gbraid ? String(body.gbraid) : null;
+  let wbraid = body?.wbraid ? String(body.wbraid) : null;
+  const leadId = body?.leadId ? String(body.leadId).trim() : "";
+
+  // Se não veio identificador direto na URL, recupera pelo código do lead
+  // (PT-XXXX) capturado na landing — o clique do anúncio ficou salvo lá.
+  if (leadId && !gclid && !gbraid && !wbraid) {
+    const lead = await getLead(leadId);
+    if (lead) {
+      gclid = lead.gclid ?? null;
+      gbraid = lead.gbraid ?? null;
+      wbraid = lead.wbraid ?? null;
+    }
+  }
 
   const config = await getConfig();
   if (!config.payments.pix) {

@@ -43,12 +43,27 @@ function genLeadId(): string {
   return `PT-${t}${r}`;
 }
 
+// Chave e validade (90 dias) do codigo do lead guardado no navegador. No
+// checkout esse codigo e usado para recuperar o gclid/gbraid/wbraid do lead
+// (o clique do anuncio cai na landing, mas o checkout vem depois pelo WhatsApp).
+const LEAD_STORE_KEY = "pt_lead";
+
+function storeLeadId(id: string) {
+  try {
+    localStorage.setItem(LEAD_STORE_KEY, JSON.stringify({ id, ts: Date.now() }));
+  } catch {
+    /* modo privado / storage bloqueado: ignora */
+  }
+}
+
 // Le os parametros de rastreamento da URL atual.
 function readTracking() {
   const params = new URLSearchParams(window.location.search);
   const get = (k: string) => params.get(k) ?? undefined;
   return {
     gclid: get("gclid"),
+    gbraid: get("gbraid"),
+    wbraid: get("wbraid"),
     fbclid: get("fbclid"),
     utm_source: get("utm_source"),
     utm_medium: get("utm_medium"),
@@ -102,6 +117,8 @@ export default function ChatFlow({ phones, introMessage, googleAdsId, conversion
       // (ex: "Celular iPhone"), nao o caminho inteiro.
       const deviceLabel = path.length ? path[path.length - 1] : "";
       const id = genLeadId();
+      // Guarda o código no navegador para o checkout recuperar o gclid depois.
+      storeLeadId(id);
       const phone = pickPhone(phones);
 
       if (!phone) {

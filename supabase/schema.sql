@@ -41,6 +41,8 @@ create table if not exists public.leads (
   device       text,
   path         jsonb,
   gclid        text,
+  gbraid       text,
+  wbraid       text,
   fbclid       text,
   utm_source   text,
   utm_medium   text,
@@ -56,6 +58,10 @@ create table if not exists public.leads (
   currency     text default 'BRL',
   sold_at      timestamptz
 );
+
+-- Migracao para bancos que ja tinham a tabela leads sem gbraid/wbraid:
+alter table public.leads add column if not exists gbraid text;
+alter table public.leads add column if not exists wbraid text;
 
 -- Migracao para bancos que ja tinham a tabela leads sem as colunas de venda:
 alter table public.leads add column if not exists sold boolean not null default false;
