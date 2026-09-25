@@ -4,6 +4,7 @@ import { getConfig } from "@/lib/config";
 import { getSecretsStatus } from "@/lib/secrets";
 import { logoutAction } from "./actions";
 import AdminForm from "./AdminForm";
+import DbCard from "./DbCard";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,10 @@ export default async function AdminPage() {
         </div>
 
         <AdminForm initial={config} secrets={secrets} />
+
+        <div className="mt-6">
+          <DbCard />
+        </div>
       </div>
     </main>
   );
