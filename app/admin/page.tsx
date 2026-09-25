@@ -24,6 +24,12 @@ export default async function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <a
+              href="/admin/dashboard"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              Dashboard
+            </a>
+            <a
               href="/vendas"
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
             >
