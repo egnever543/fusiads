@@ -168,6 +168,8 @@ export type LeadInput = {
   device?: string;
   path?: string[];
   gclid?: string;
+  gbraid?: string;
+  wbraid?: string;
   fbclid?: string;
   utm_source?: string;
   utm_medium?: string;
@@ -195,6 +197,8 @@ export async function insertLead(lead: LeadInput): Promise<{ ok: boolean; error?
     device: clip(lead.device),
     path: Array.isArray(lead.path) ? lead.path.slice(0, 20) : null,
     gclid: clip(lead.gclid, 2000),
+    gbraid: clip(lead.gbraid, 2000),
+    wbraid: clip(lead.wbraid, 2000),
     fbclid: clip(lead.fbclid, 2000),
     utm_source: clip(lead.utm_source),
     utm_medium: clip(lead.utm_medium),
@@ -239,6 +243,8 @@ export type Lead = {
   device: string | null;
   path: string[] | null;
   gclid: string | null;
+  gbraid: string | null;
+  wbraid: string | null;
   fbclid: string | null;
   utm_source: string | null;
   utm_medium: string | null;
@@ -255,7 +261,7 @@ export type Lead = {
 };
 
 const LEAD_COLUMNS =
-  "id, device, path, gclid, fbclid, utm_source, utm_medium, utm_campaign, utm_content, utm_term, referrer, user_agent, created_at, sold, sale_value, currency, sold_at";
+  "id, device, path, gclid, gbraid, wbraid, fbclid, utm_source, utm_medium, utm_campaign, utm_content, utm_term, referrer, user_agent, created_at, sold, sale_value, currency, sold_at";
 
 // Busca um lead pelo codigo (id). Roda apenas no servidor.
 export async function getLead(id: string): Promise<Lead | null> {
