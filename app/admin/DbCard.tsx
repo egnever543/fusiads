@@ -62,8 +62,9 @@ export default function DbCard() {
     <section className="rounded-2xl bg-white p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-800">Banco de dados</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Cria/atualiza as tabelas deste cliente. Roda o schema versionado do projeto (seguro e idempotente) —
-        use ao configurar um cliente novo ou depois de uma atualização.
+        As tabelas são criadas/atualizadas <strong>automaticamente a cada deploy de produção</strong>. Este
+        botão é uma alternativa manual (útil para forçar agora ou em caso de falha no deploy). Roda o schema
+        versionado do projeto (seguro e idempotente).
       </p>
 
       <div className="mt-4">
