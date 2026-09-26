@@ -53,7 +53,20 @@ async function main() {
     return;
   }
 
-  const client = new Client({ connectionString: conn, ssl: { rejectUnauthorized: false } });
+  // Remove sslmode da string: o `pg` novo trata sslmode=require como verify-full
+  // e ignora o ssl.rejectUnauthorized=false, quebrando com o certificado do
+  // Supabase. Sem sslmode, o objeto ssl abaixo define o comportamento.
+  let connClean = conn;
+  try {
+    const u = new URL(conn);
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("ssl");
+    connClean = u.toString();
+  } catch {
+    connClean = conn.replace(/([?&])sslmode=[^&]*/gi, "$1").replace(/[?&]$/, "");
+  }
+
+  const client = new Client({ connectionString: connClean, ssl: { rejectUnauthorized: false } });
   try {
     await client.connect();
     await client.query(sql);

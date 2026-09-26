@@ -27,12 +27,28 @@ export function dbAdminConfigured(): boolean {
   return Boolean(connectionString());
 }
 
+// Remove o parâmetro sslmode da connection string. As versões novas do `pg`
+// tratam sslmode=require como verificação TOTAL do certificado (verify-full),
+// o que ignora o nosso ssl.rejectUnauthorized=false e quebra com o certificado
+// do Supabase ("self-signed certificate in certificate chain"). Tirando o
+// sslmode, o nosso objeto ssl abaixo é quem define o comportamento.
+function stripSslMode(conn: string): string {
+  try {
+    const u = new URL(conn);
+    u.searchParams.delete("sslmode");
+    u.searchParams.delete("ssl");
+    return u.toString();
+  } catch {
+    return conn.replace(/([?&])sslmode=[^&]*/gi, "$1").replace(/[?&]$/, "");
+  }
+}
+
 function newClient(): Client {
   const conn = connectionString();
   if (!conn) throw new Error("Sem connection string do Postgres (POSTGRES_URL_NON_POOLING).");
   // Supabase exige SSL; a CA pode não estar no bundle, então não verificamos a
   // cadeia (a conexão continua criptografada).
-  return new Client({ connectionString: conn, ssl: { rejectUnauthorized: false } });
+  return new Client({ connectionString: stripSslMode(conn), ssl: { rejectUnauthorized: false } });
 }
 
 // Lê o schema versionado. O arquivo é incluído no bundle pelo
