@@ -16,6 +16,7 @@ export async function POST(request: Request) {
   //    mesmo que guardamos como transaction_id da renovação).
   const transactionId = String(
     body?.data?.id ??
+      body?.objectId ?? // AtivoPay: { type, objectId, data: { id } }
       body?.transaction_id ??
       body?.id ??
       body?.data?.transaction_id ??

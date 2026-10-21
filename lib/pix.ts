@@ -6,18 +6,22 @@
 import type { PixTransaction, CreateParams } from "./pix-types";
 import * as fastdepix from "./fastdepix";
 import * as paggone from "./paggone";
+import * as ativopay from "./ativopay";
 
 export type { PixTransaction, CreateParams, PixStatus } from "./pix-types";
 
-export type PixProvider = "fastdepix" | "paggone";
+export type PixProvider = "fastdepix" | "paggone" | "ativopay";
 
 export const PIX_PROVIDERS: { value: PixProvider; label: string }[] = [
   { value: "fastdepix", label: "FastDePix" },
   { value: "paggone", label: "paggOne" },
+  { value: "ativopay", label: "AtivoPay" },
 ];
 
 export function normalizeProvider(v: unknown): PixProvider {
-  return v === "paggone" ? "paggone" : "fastdepix";
+  if (v === "paggone") return "paggone";
+  if (v === "ativopay") return "ativopay";
+  return "fastdepix";
 }
 
 type Adapter = {
@@ -27,7 +31,9 @@ type Adapter = {
 };
 
 function adapter(provider: PixProvider): Adapter {
-  return provider === "paggone" ? paggone : fastdepix;
+  if (provider === "paggone") return paggone;
+  if (provider === "ativopay") return ativopay;
+  return fastdepix;
 }
 
 export function pixConfigured(provider: PixProvider): Promise<boolean> {

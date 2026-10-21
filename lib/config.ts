@@ -31,7 +31,7 @@ export type SiteConfig = {
   payments: PaymentMethods;
 };
 
-export type PixProvider = "fastdepix" | "paggone";
+export type PixProvider = "fastdepix" | "paggone" | "ativopay";
 
 export type PaymentMethods = {
   pix: boolean;
@@ -91,9 +91,11 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
   // formato antigo (pixEnabled) automaticamente.
   const legacyPix = (raw as { pixEnabled?: unknown } | null | undefined)?.pixEnabled;
   const rawProvider = (merged.payments as { pixProvider?: unknown } | undefined)?.pixProvider;
+  const pixProvider: PixProvider =
+    rawProvider === "paggone" ? "paggone" : rawProvider === "ativopay" ? "ativopay" : "fastdepix";
   const payments: PaymentMethods = {
     pix: Boolean(merged.payments?.pix ?? legacyPix ?? false),
-    pixProvider: rawProvider === "paggone" ? "paggone" : "fastdepix",
+    pixProvider,
   };
 
   return {
