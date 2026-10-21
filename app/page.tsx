@@ -73,7 +73,7 @@ export default async function HomePage() {
           <div className="content-grid">
             <div className="content-image">
               <img
-                src="https://cinebrasil.top/wp-content/uploads/2025/10/IPTV-MODELO-B02-1-1024x1024-1.webp"
+                src="https://i.imgur.com/VgBrI59.png"
                 alt="Assista onde quiser"
                 loading="lazy"
               />
