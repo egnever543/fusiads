@@ -65,7 +65,12 @@ export async function saveConfigAction(
     offlineConversionName: String(formData.get("offlineConversionName") ?? "").trim(),
     payments: {
       pix: formData.get("payment_pix") === "on",
-      pixProvider: formData.get("payment_provider") === "paggone" ? "paggone" : "fastdepix",
+      pixProvider:
+        formData.get("payment_provider") === "paggone"
+          ? "paggone"
+          : formData.get("payment_provider") === "ativopay"
+            ? "ativopay"
+            : "fastdepix",
     },
   });
 
@@ -76,9 +81,11 @@ export async function saveConfigAction(
   // site_config). Só sobrescreve os campos que vieram preenchidos.
   const fastdepixToken = String(formData.get("fastdepix_token") ?? "").trim();
   const paggoneToken = String(formData.get("paggone_token") ?? "").trim();
+  const ativopayToken = String(formData.get("ativopay_token") ?? "").trim();
   const patch: Record<string, string> = {};
   if (fastdepixToken) patch.fastdepix_api_key = fastdepixToken;
   if (paggoneToken) patch.paggone_api_key = paggoneToken;
+  if (ativopayToken) patch.ativopay_api_key = ativopayToken;
   if (Object.keys(patch).length > 0) {
     const s = await saveSecrets(patch);
     if (!s.ok) return { ok: false, error: `Config salva, mas o token falhou: ${s.error}` };

@@ -35,7 +35,7 @@ export default function AdminForm({
   secrets,
 }: {
   initial: SiteConfig;
-  secrets: { fastdepix: boolean; paggone: boolean };
+  secrets: { fastdepix: boolean; paggone: boolean; ativopay: boolean };
 }) {
   const [state, formAction] = useFormState<SaveState, FormData>(saveConfigAction, {});
 
@@ -153,6 +153,7 @@ export default function AdminForm({
           <select name="payment_provider" defaultValue={initial.payments.pixProvider} className={inputClass}>
             <option value="fastdepix">FastDePix</option>
             <option value="paggone">paggOne</option>
+            <option value="ativopay">AtivoPay</option>
           </select>
           <p className="mt-1 text-xs text-slate-500">
             Escolha qual gateway gera o PIX neste cliente. Preencha abaixo o token do provedor escolhido.
@@ -187,6 +188,22 @@ export default function AdminForm({
             name="paggone_token"
             autoComplete="off"
             placeholder={secrets.paggone ? "•••••••• (deixe em branco para manter)" : "cole o token aqui"}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Token da AtivoPay{" "}
+            <span className={secrets.ativopay ? "text-green-600" : "text-slate-400"}>
+              ({secrets.ativopay ? "configurado" : "não configurado"})
+            </span>
+          </label>
+          <input
+            type="password"
+            name="ativopay_token"
+            autoComplete="off"
+            placeholder={secrets.ativopay ? "•••••••• (deixe em branco para manter)" : "cole o token aqui"}
             className={inputClass}
           />
           <p className="mt-1 text-xs text-slate-500">
