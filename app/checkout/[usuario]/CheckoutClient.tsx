@@ -145,7 +145,7 @@ export default function CheckoutClient(props: Props) {
         const r = await fetch(`/api/pix?id=${pix.id}`, { cache: "no-store" });
         const d = await r.json();
         if (!ativo || processando) return;
-        if (d?.status === "paid" || d?.status === "approved") {
+        if (d?.status === "paid") {
           processando = true;
           clearInterval(timer);
           await fetch("/api/renew", {

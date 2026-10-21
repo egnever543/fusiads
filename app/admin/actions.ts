@@ -63,17 +63,24 @@ export async function saveConfigAction(
     googleAdsId: String(formData.get("googleAdsId") ?? "").trim(),
     conversionLabel: String(formData.get("conversionLabel") ?? "").trim(),
     offlineConversionName: String(formData.get("offlineConversionName") ?? "").trim(),
-    payments: { pix: formData.get("payment_pix") === "on" },
+    payments: {
+      pix: formData.get("payment_pix") === "on",
+      pixProvider: formData.get("payment_provider") === "paggone" ? "paggone" : "fastdepix",
+    },
   });
 
   const result = await saveConfig(config);
   if (!result.ok) return { ok: false, error: result.error };
 
-  // Token da FastDePix: guardado na tabela protegida `secrets` (nunca em
-  // site_config). Só sobrescreve se o campo veio preenchido.
+  // Tokens dos provedores: guardados na tabela protegida `secrets` (nunca em
+  // site_config). Só sobrescreve os campos que vieram preenchidos.
   const fastdepixToken = String(formData.get("fastdepix_token") ?? "").trim();
-  if (fastdepixToken) {
-    const s = await saveSecrets({ fastdepix_api_key: fastdepixToken });
+  const paggoneToken = String(formData.get("paggone_token") ?? "").trim();
+  const patch: Record<string, string> = {};
+  if (fastdepixToken) patch.fastdepix_api_key = fastdepixToken;
+  if (paggoneToken) patch.paggone_api_key = paggoneToken;
+  if (Object.keys(patch).length > 0) {
+    const s = await saveSecrets(patch);
     if (!s.ok) return { ok: false, error: `Config salva, mas o token falhou: ${s.error}` };
   }
 

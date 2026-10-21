@@ -35,7 +35,7 @@ export default function AdminForm({
   secrets,
 }: {
   initial: SiteConfig;
-  secrets: { fastdepix: boolean };
+  secrets: { fastdepix: boolean; paggone: boolean };
 }) {
   const [state, formAction] = useFormState<SaveState, FormData>(saveConfigAction, {});
 
@@ -141,12 +141,24 @@ export default function AdminForm({
       {/* --- Formas de pagamento (checkout de renovação) --- */}
       <Card
         title="Formas de pagamento (checkout)"
-        hint="Usadas na página /checkout/[usuario]. As chaves secretas ficam nas variáveis de ambiente, não aqui."
+        hint="Usadas na página /checkout/[usuario]. As chaves ficam guardadas de forma segura no Supabase, lidas só no servidor."
       >
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="payment_pix" defaultChecked={initial.payments.pix} className="h-4 w-4" />
-          PIX (FastDePix) ativo
+          PIX ativo no checkout
         </label>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">Provedor de PIX</label>
+          <select name="payment_provider" defaultValue={initial.payments.pixProvider} className={inputClass}>
+            <option value="fastdepix">FastDePix</option>
+            <option value="paggone">paggOne</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Escolha qual gateway gera o PIX neste cliente. Preencha abaixo o token do provedor escolhido.
+          </p>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-slate-700">
             Token da FastDePix{" "}
@@ -161,8 +173,24 @@ export default function AdminForm({
             placeholder={secrets.fastdepix ? "•••••••• (deixe em branco para manter)" : "cole o token aqui"}
             className={inputClass}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700">
+            Token da paggOne{" "}
+            <span className={secrets.paggone ? "text-green-600" : "text-slate-400"}>
+              ({secrets.paggone ? "configurado" : "não configurado"})
+            </span>
+          </label>
+          <input
+            type="password"
+            name="paggone_token"
+            autoComplete="off"
+            placeholder={secrets.paggone ? "•••••••• (deixe em branco para manter)" : "cole o token aqui"}
+            className={inputClass}
+          />
           <p className="mt-1 text-xs text-slate-500">
-            Guardado de forma segura no Supabase (tabela protegida), lido só no servidor. Deixe em branco para não alterar.
+            Chaves guardadas no Supabase (tabela protegida), lidas só no servidor. Deixe em branco para não alterar.
           </p>
         </div>
       </Card>

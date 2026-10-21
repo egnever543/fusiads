@@ -4,6 +4,7 @@
 // ==========================================================================
 
 import { getSecret } from "./secrets";
+import type { PixTransaction, CreateParams, PixStatus } from "./pix-types";
 
 const BASE_URL = process.env.FASTDEPIX_BASE_URL ?? "https://fastdepix.space/api/v1";
 
@@ -12,36 +13,32 @@ async function getKey(): Promise<string | undefined> {
   return getSecret("fastdepix_api_key", "FASTDEPIX_API_KEY");
 }
 
-export type PixTransaction = {
-  id: number | string;
-  amount: number;
-  status: string;
-  qrCode: string | null; // URL da imagem do QR
-  qrCodeText: string | null; // copia-e-cola
-  expiresAt: string | null;
-};
-
 export async function pixConfigured(): Promise<boolean> {
   return Boolean(await getKey());
 }
 
+// Normaliza o status da FastDePix para o status único do sistema.
+function normalizeStatus(raw: unknown): PixStatus {
+  const s = String(raw ?? "").toLowerCase();
+  if (s === "paid" || s === "approved" || s === "completed" || s === "confirmed") return "paid";
+  if (s === "pending" || s === "waiting" || s === "processing") return "pending";
+  if (s === "expired") return "expired";
+  if (s === "failed" || s === "canceled" || s === "refused" || s === "refunded") return "failed";
+  return "unknown";
+}
+
 function mapTx(d: any): PixTransaction {
   return {
-    id: d.id,
+    id: String(d.id),
     amount: Number(d.amount),
-    status: String(d.status),
+    status: normalizeStatus(d.status),
     qrCode: d.qr_code ?? null,
     qrCodeText: d.qr_code_text ?? null,
     expiresAt: d.qr_code_expires_at ?? null,
   };
 }
 
-export async function createTransaction(params: {
-  amount: number;
-  phone?: string;
-  name?: string;
-  notificationUrl?: string;
-}): Promise<PixTransaction> {
+export async function createTransaction(params: CreateParams): Promise<PixTransaction> {
   const API_KEY = await getKey();
   if (!API_KEY) throw new Error("FastDePix não configurada.");
   const body: Record<string, unknown> = { amount: params.amount };

@@ -1,4 +1,5 @@
-import { getTransaction } from "./fastdepix";
+import { getTransaction } from "./pix";
+import { normalizeProvider } from "./pix";
 import { renewCustomer } from "./sigma";
 import {
   getRenewal,
@@ -19,14 +20,15 @@ export async function provisionRenewal(
   // Já renovado: devolve sucesso (idempotência).
   if (renewal.provisioned) return { ok: true, status: 200, amount: renewal.amount };
 
-  // Reconfirma o pagamento NA FONTE (não confia só no cliente).
+  // Reconfirma o pagamento NA FONTE (não confia só no cliente), usando o
+  // provedor com que a cobrança foi criada.
   let tx;
   try {
-    tx = await getTransaction(transactionId);
+    tx = await getTransaction(normalizeProvider(renewal.provider), transactionId);
   } catch (e) {
     return { ok: false, status: 502, error: (e as Error).message };
   }
-  if (tx.status !== "paid" && tx.status !== "approved") {
+  if (tx.status !== "paid") {
     return { ok: false, status: 402, error: "Pagamento ainda não confirmado." };
   }
   if (Math.abs(Number(tx.amount) - Number(renewal.amount)) > 0.01) {
