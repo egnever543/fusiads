@@ -25,7 +25,7 @@ export default async function HomePage() {
           </div>
           <div className="hero-image">
             <img
-              src="https://cinebrasil.top/wp-content/uploads/2025/10/IPTV-MODELO02-B02-1024x1024-1.webp"
+              src="https://i.imgur.com/89utb28.png"
               alt="PREMIUM TV"
               loading="lazy"
             />
