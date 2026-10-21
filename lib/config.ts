@@ -31,8 +31,12 @@ export type SiteConfig = {
   payments: PaymentMethods;
 };
 
+export type PixProvider = "fastdepix" | "paggone";
+
 export type PaymentMethods = {
   pix: boolean;
+  // Provedor de PIX ativo neste cliente (cada um escolhe no /admin).
+  pixProvider: PixProvider;
   // futuros métodos: card?: boolean; boleto?: boolean; ...
 };
 
@@ -47,7 +51,7 @@ export const DEFAULT_CONFIG: SiteConfig = {
   googleAdsId: "AW-17909477604",
   conversionLabel: "",
   offlineConversionName: "",
-  payments: { pix: false },
+  payments: { pix: false, pixProvider: "fastdepix" },
 };
 
 // Extrai o ID do Google Ads (AW-XXXX). Aceita o ID puro OU o snippet inteiro
@@ -86,8 +90,10 @@ export function normalizeConfig(raw: Partial<SiteConfig> | null | undefined): Si
   // Formas de pagamento: aceita o objeto novo (payments.pix) e migra o
   // formato antigo (pixEnabled) automaticamente.
   const legacyPix = (raw as { pixEnabled?: unknown } | null | undefined)?.pixEnabled;
+  const rawProvider = (merged.payments as { pixProvider?: unknown } | undefined)?.pixProvider;
   const payments: PaymentMethods = {
     pix: Boolean(merged.payments?.pix ?? legacyPix ?? false),
+    pixProvider: rawProvider === "paggone" ? "paggone" : "fastdepix",
   };
 
   return {

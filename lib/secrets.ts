@@ -21,9 +21,10 @@ export async function getSecret(key: string, envFallback?: string): Promise<stri
 }
 
 // Status (só booleanos) para exibir no /admin — nunca devolve o valor.
-export async function getSecretsStatus(): Promise<{ fastdepix: boolean }> {
+export async function getSecretsStatus(): Promise<{ fastdepix: boolean; paggone: boolean }> {
   return {
     fastdepix: Boolean(await getSecret("fastdepix_api_key", "FASTDEPIX_API_KEY")),
+    paggone: Boolean(await getSecret("paggone_api_key", "PAGGONE_API_KEY")),
   };
 }
 

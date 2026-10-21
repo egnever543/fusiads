@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { getConfig, getLead } from "@/lib/config";
 import { getPackage, priceReais } from "@/lib/packages";
 import { findCustomerByUsername, sigmaConfigured } from "@/lib/sigma";
-import { createTransaction, getTransaction, pixConfigured } from "@/lib/fastdepix";
-import { saveRenewalInit } from "@/lib/renewals";
+import { createTransaction, getTransaction, pixConfigured } from "@/lib/pix";
+import { getRenewal, saveRenewalInit } from "@/lib/renewals";
+import { normalizeProvider } from "@/lib/pix";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
   if (!config.payments.pix) {
     return NextResponse.json({ error: "Pagamento PIX indisponível." }, { status: 400 });
   }
-  if (!(await pixConfigured()) || !sigmaConfigured()) {
+  const provider = config.payments.pixProvider;
+  if (!(await pixConfigured(provider)) || !sigmaConfigured()) {
     return NextResponse.json({ error: "Pagamento não configurado." }, { status: 500 });
   }
 
@@ -52,7 +54,11 @@ export async function POST(request: Request) {
 
   let tx;
   try {
-    tx = await createTransaction({ amount: priceReais(pkg.priceCents), notificationUrl });
+    tx = await createTransaction(provider, {
+      amount: priceReais(pkg.priceCents),
+      notificationUrl,
+      referenceId: customer.username,
+    });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });
   }
@@ -67,6 +73,7 @@ export async function POST(request: Request) {
     gclid,
     gbraid,
     wbraid,
+    provider,
   }).catch((e) => console.error("saveRenewalInit:", e));
 
   return NextResponse.json({
@@ -79,12 +86,16 @@ export async function POST(request: Request) {
   });
 }
 
-// Consulta o status (usado no polling do modal).
+// Consulta o status (usado no polling do modal). O provedor é descoberto pela
+// renovação salva (fonte confiável), caindo para o provedor atual da config.
 export async function GET(request: Request) {
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id obrigatório." }, { status: 400 });
   try {
-    const tx = await getTransaction(id);
+    const renewal = await getRenewal(id);
+    const config = await getConfig();
+    const provider = normalizeProvider(renewal?.provider ?? config.payments.pixProvider);
+    const tx = await getTransaction(provider, id);
     return NextResponse.json({ id: tx.id, status: tx.status });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 502 });

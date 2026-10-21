@@ -4,6 +4,7 @@ import { getConfig } from "@/lib/config";
 import { getSecretsStatus } from "@/lib/secrets";
 import { logoutAction } from "./actions";
 import AdminForm from "./AdminForm";
+import DbCard from "./DbCard";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,12 @@ export default async function AdminPage() {
           </div>
           <div className="flex items-center gap-2">
             <a
+              href="/admin/dashboard"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              Dashboard
+            </a>
+            <a
               href="/vendas"
               className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50"
             >
@@ -37,6 +44,10 @@ export default async function AdminPage() {
         </div>
 
         <AdminForm initial={config} secrets={secrets} />
+
+        <div className="mt-6">
+          <DbCard />
+        </div>
       </div>
     </main>
   );
