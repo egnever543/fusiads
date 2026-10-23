@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "qrcode";
 
 type PkgView = {
   id: string;
@@ -54,6 +55,9 @@ export default function CheckoutClient(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [copied, setCopied] = useState(false);
+  // QR gerado no navegador a partir do copia-e-cola (EMV). Funciona para todos
+  // os provedores, inclusive quando o gateway não devolve a imagem do QR.
+  const [qrImg, setQrImg] = useState<string | null>(null);
   const conversionFired = useRef(false);
 
   const lista = useMemo(
@@ -179,6 +183,26 @@ export default function CheckoutClient(props: Props) {
       clearInterval(timer);
     };
   }, [pix, paid, props.googleAdsId, props.conversionLabel]);
+
+  // Gera a imagem do QR a partir do código copia-e-cola assim que o PIX surge.
+  useEffect(() => {
+    const text = pix?.qrCodeText;
+    if (!text) {
+      setQrImg(null);
+      return;
+    }
+    let ativo = true;
+    QRCode.toDataURL(text, { width: 224, margin: 1 })
+      .then((url) => {
+        if (ativo) setQrImg(url);
+      })
+      .catch(() => {
+        if (ativo) setQrImg(null);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [pix?.qrCodeText]);
 
   function copiar() {
     if (!pix?.qrCodeText) return;
@@ -327,8 +351,12 @@ export default function CheckoutClient(props: Props) {
               <>
                 <h3 className="text-lg font-bold text-slate-800">Pague com PIX</h3>
                 <p className="mt-1 text-sm text-slate-500">Valor: R$ {reais(Math.round(pix.amount * 100))}</p>
-                {pix.qrCode && (
-                  <img src={pix.qrCode} alt="QR Code PIX" className="mx-auto my-4 h-56 w-56 object-contain" />
+                {(qrImg || pix.qrCode) && (
+                  <img
+                    src={qrImg ?? pix.qrCode ?? ""}
+                    alt="QR Code PIX"
+                    className="mx-auto my-4 h-56 w-56 object-contain"
+                  />
                 )}
                 {pix.qrCodeText && (
                   <>

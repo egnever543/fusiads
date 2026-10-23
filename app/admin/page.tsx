@@ -2,9 +2,10 @@ import { redirect } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
 import { getSecretsStatus } from "@/lib/secrets";
+import { checkSchemaViaServiceRole, getSchemaSql } from "@/lib/db-admin";
 import { logoutAction } from "./actions";
 import AdminForm from "./AdminForm";
-import DbCard from "./DbCard";
+import DbStatusPanel from "./DbStatusPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ export default async function AdminPage() {
 
   const config = await getConfig();
   const secrets = await getSecretsStatus();
+  // Checa o banco a cada acesso ao painel (via service_role). Se algo faltar,
+  // mostramos o SQL pronto para copiar.
+  const dbStatus = await checkSchemaViaServiceRole();
+  const schemaSql =
+    dbStatus.configured === true && dbStatus.ok ? "" : await getSchemaSql();
 
   return (
     <main className="min-h-screen bg-slate-100 py-10">
@@ -46,7 +52,7 @@ export default async function AdminPage() {
         <AdminForm initial={config} secrets={secrets} />
 
         <div className="mt-6">
-          <DbCard />
+          <DbStatusPanel status={dbStatus} schemaSql={schemaSql} />
         </div>
       </div>
     </main>
