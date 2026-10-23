@@ -5,6 +5,7 @@ const nextConfig = {
   experimental: {
     outputFileTracingIncludes: {
       "/api/admin/migrate": ["./supabase/schema.sql"],
+      "/admin": ["./supabase/schema.sql"],
     },
   },
   async rewrites() {
