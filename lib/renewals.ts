@@ -19,12 +19,13 @@ export type Renewal = {
   gbraid: string | null;
   wbraid: string | null;
   provider: string | null;
+  reseller_id: string | null;
   created_at: string | null;
   renewed_at: string | null;
 };
 
 const COLS =
-  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, gbraid, wbraid, provider, created_at, renewed_at";
+  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, gbraid, wbraid, provider, reseller_id, created_at, renewed_at";
 
 export async function saveRenewalInit(input: {
   transactionId: string;
@@ -37,6 +38,7 @@ export async function saveRenewalInit(input: {
   gbraid?: string | null;
   wbraid?: string | null;
   provider?: string | null;
+  resellerId?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {
   const client = getServiceClient();
   if (!client) return { ok: false, error: "Supabase não configurado." };
@@ -53,6 +55,7 @@ export async function saveRenewalInit(input: {
       gbraid: input.gbraid ?? null,
       wbraid: input.wbraid ?? null,
       provider: input.provider ?? "fastdepix",
+      reseller_id: input.resellerId ?? null,
     },
     { onConflict: "transaction_id" }
   );

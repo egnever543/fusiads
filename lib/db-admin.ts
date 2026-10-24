@@ -95,7 +95,7 @@ export async function runMigrations(): Promise<{ ok: boolean; error?: string }> 
 const EXPECTED: { table: string; columns: string[] }[] = [
   { table: "site_config", columns: [] },
   { table: "leads", columns: ["gclid", "gbraid", "wbraid", "sold", "sale_value", "sold_at"] },
-  { table: "renewals", columns: ["gclid", "gbraid", "wbraid", "provider", "renewed_at"] },
+  { table: "renewals", columns: ["gclid", "gbraid", "wbraid", "provider", "reseller_id", "renewed_at"] },
   { table: "secrets", columns: [] },
 ];
 

@@ -94,13 +94,15 @@ create table if not exists public.renewals (
   gbraid         text,
   wbraid         text,
   provider       text not null default 'fastdepix',
+  reseller_id    text,
   created_at     timestamptz not null default now(),
   renewed_at     timestamptz
 );
--- Migracao para bancos que ja tinham a tabela renewals sem gbraid/wbraid/provider:
+-- Migracao para bancos que ja tinham a tabela renewals sem gbraid/wbraid/provider/reseller_id:
 alter table public.renewals add column if not exists gbraid text;
 alter table public.renewals add column if not exists wbraid text;
 alter table public.renewals add column if not exists provider text not null default 'fastdepix';
+alter table public.renewals add column if not exists reseller_id text;
 create index if not exists renewals_username_idx on public.renewals (username);
 create index if not exists renewals_created_at_idx on public.renewals (created_at desc);
 -- Feed de conversoes offline le as renovacoes pagas por renewed_at.

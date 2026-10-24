@@ -74,6 +74,7 @@ export async function POST(request: Request) {
     gbraid,
     wbraid,
     provider,
+    resellerId: customer.reseller_id,
   }).catch((e) => console.error("saveRenewalInit:", e));
 
   return NextResponse.json({
