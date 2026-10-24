@@ -1,6 +1,7 @@
 import { getTransaction } from "./pix";
 import { normalizeProvider } from "./pix";
-import { renewCustomer } from "./sigma";
+import { renewCustomer, removeCredits } from "./sigma";
+import { getPackage, packageCredits } from "./packages";
 import {
   getRenewal,
   claimRenewal,
@@ -50,5 +51,23 @@ export async function provisionRenewal(
   }
 
   await markRenewed(transactionId);
+
+  // Debita os créditos do revendedor dono do cliente (não da conta-mãe).
+  // Best-effort: a renovação já aconteceu e foi paga, então uma falha aqui NÃO
+  // desfaz nem repete a renovação — apenas registra o erro para conciliação.
+  try {
+    const pkg = getPackage(renewal.package_id);
+    const credits = pkg ? packageCredits(pkg) : 0;
+    if (renewal.reseller_id && credits > 0) {
+      const deb = await removeCredits(renewal.reseller_id, credits, {
+        reference: transactionId,
+        note: `Renovação ${renewal.username} (${renewal.package_label ?? renewal.package_id})`,
+      });
+      if (!deb.ok) console.error("removeCredits:", deb.error);
+    }
+  } catch (e) {
+    console.error("removeCredits exception:", (e as Error).message);
+  }
+
   return { ok: true, status: 200, amount: renewal.amount };
 }

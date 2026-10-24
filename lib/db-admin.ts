@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
 import { Client } from "pg";
+import { getServiceClient } from "./config";
 
 // ==========================================================================
 // Migração do banco a partir do painel /admin. Roda APENAS no servidor.
@@ -52,10 +53,20 @@ function newClient(): Client {
 }
 
 // Lê o schema versionado. O arquivo é incluído no bundle pelo
-// outputFileTracingIncludes (ver next.config.js).
+// outputFileTracingIncludes (ver next.config.js) nas rotas que o usam.
 async function readSchema(): Promise<string> {
   const p = path.join(process.cwd(), "supabase", "schema.sql");
   return readFile(p, "utf8");
+}
+
+// Versão pública para exibir no /admin (SQL pronto para copiar). Nunca falha:
+// se não conseguir ler, devolve string vazia.
+export async function getSchemaSql(): Promise<string> {
+  try {
+    return await readSchema();
+  } catch {
+    return "";
+  }
 }
 
 export async function runMigrations(): Promise<{ ok: boolean; error?: string }> {
@@ -80,11 +91,11 @@ export async function runMigrations(): Promise<{ ok: boolean; error?: string }> 
   }
 }
 
-// Tabelas e colunas que o app espera. Usado só para exibir o status no /admin.
+// Tabelas e colunas que o app espera. Usado para exibir o status no /admin.
 const EXPECTED: { table: string; columns: string[] }[] = [
   { table: "site_config", columns: [] },
   { table: "leads", columns: ["gclid", "gbraid", "wbraid", "sold", "sale_value", "sold_at"] },
-  { table: "renewals", columns: ["gclid", "gbraid", "wbraid", "renewed_at"] },
+  { table: "renewals", columns: ["gclid", "gbraid", "wbraid", "provider", "reseller_id", "renewed_at"] },
   { table: "secrets", columns: [] },
 ];
 
@@ -130,5 +141,48 @@ export async function getDbStatus(): Promise<DbStatus> {
     return { configured: true, ok: false, items: [], error: (e as Error).message };
   } finally {
     await client.end().catch(() => {});
+  }
+}
+
+// ==========================================================================
+// Checagem do schema usando a chave service_role (supabase-js), que TODO
+// cliente já tem (não depende da POSTGRES_URL_NON_POOLING). Roda a cada acesso
+// ao /admin. Prova cada tabela/coluna com um select leve e detecta o que falta.
+// ==========================================================================
+
+async function checkOneTable(
+  client: NonNullable<ReturnType<typeof getServiceClient>>,
+  e: { table: string; columns: string[] }
+): Promise<DbStatusItem> {
+  // 1) Tenta selecionar as colunas esperadas de uma vez (ou "*" se nenhuma).
+  const sel = e.columns.length ? e.columns.join(",") : "*";
+  const first = await client.from(e.table).select(sel).limit(1);
+  if (!first.error) return { table: e.table, exists: true, missingColumns: [] };
+
+  // 2) Deu erro: a tabela existe? Prova com "*".
+  const probe = await client.from(e.table).select("*").limit(1);
+  if (probe.error) {
+    // Tabela não existe (ou inacessível) → considera faltando por completo.
+    return { table: e.table, exists: false, missingColumns: e.columns };
+  }
+
+  // 3) Tabela existe; descobre quais colunas faltam (uma a uma).
+  const missing: string[] = [];
+  for (const col of e.columns) {
+    const r = await client.from(e.table).select(col).limit(1);
+    if (r.error) missing.push(col);
+  }
+  return { table: e.table, exists: true, missingColumns: missing };
+}
+
+export async function checkSchemaViaServiceRole(): Promise<DbStatus> {
+  const client = getServiceClient();
+  if (!client) return { configured: false };
+  try {
+    const items = await Promise.all(EXPECTED.map((e) => checkOneTable(client, e)));
+    const ok = items.every((i) => i.exists && i.missingColumns.length === 0);
+    return { configured: true, ok, items };
+  } catch (e) {
+    return { configured: true, ok: false, items: [], error: (e as Error).message };
   }
 }

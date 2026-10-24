@@ -14,6 +14,7 @@ export type SigmaCustomer = {
   connections: number; // telas
   package_is_adult: boolean;
   package: string | null; // nome decorado do pacote
+  reseller_id: string | null; // hashid do revendedor dono do cliente (user_id)
 };
 
 function headers(): HeadersInit {
@@ -49,6 +50,7 @@ export async function findCustomerByUsername(username: string): Promise<SigmaCus
     connections: Number(c.connections) || 1,
     package_is_adult: Boolean(c.package_is_adult),
     package: c.package ?? null,
+    reseller_id: c.user_id ? String(c.user_id) : null,
   };
 }
 
@@ -68,6 +70,33 @@ export async function renewCustomer(
   if (!res.ok) {
     const j = await res.json().catch(() => ({}));
     return { ok: false, error: (j as any)?.message ?? `Falha ao renovar (HTTP ${res.status}).` };
+  }
+  return { ok: true };
+}
+
+// Debita créditos de um revendedor (user) — usado para que o custo da
+// renovação saia do revendedor dono do cliente, e não da conta-mãe.
+// POST /users/{userId}/credits/remove  { credits, note?, reference? }
+export async function removeCredits(
+  userId: string,
+  credits: number,
+  opts?: { reference?: string; note?: string }
+): Promise<{ ok: boolean; error?: string }> {
+  if (!TOKEN) return { ok: false, error: "SIGMA_API_TOKEN não configurada." };
+  const amount = Math.round(Number(credits));
+  if (!userId || !(amount >= 1)) return { ok: false, error: "Revendedor ou créditos inválidos." };
+  const body: Record<string, unknown> = { credits: amount };
+  if (opts?.note) body.note = opts.note;
+  if (opts?.reference) body.reference = opts.reference;
+  const res = await fetch(`${BASE_URL}/users/${encodeURIComponent(userId)}/credits/remove`, {
+    method: "POST",
+    headers: headers(),
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    return { ok: false, error: (j as any)?.message ?? `Falha ao debitar créditos (HTTP ${res.status}).` };
   }
   return { ok: true };
 }

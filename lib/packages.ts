@@ -51,6 +51,21 @@ export const packages: Package[] = [
   { id: "x2YD0v1QPa", duration: "anual", durationLabel: "Anual", months: 12, telas: 2, adult: true, priceCents: 25650 },
 ];
 
+// Créditos consumidos do revendedor por renovação. Depende só da DURAÇÃO
+// (independe de telas/adulto): mensal 1, bimestral 2, trimestral 3,
+// semestral 5, anual 10.
+export const CREDITS_BY_DURATION: Record<DurationKey, number> = {
+  mensal: 1,
+  bimestral: 2,
+  trimestral: 3,
+  semestral: 5,
+  anual: 10,
+};
+
+export function packageCredits(pkg: Package): number {
+  return CREDITS_BY_DURATION[pkg.duration] ?? 0;
+}
+
 export function getPackage(id: string): Package | undefined {
   return packages.find((p) => p.id === id);
 }

@@ -25,7 +25,7 @@ export default async function HomePage() {
           </div>
           <div className="hero-image">
             <img
-              src="https://i.imgur.com/89utb28.png"
+              src="/hero.png"
               alt="PREMIUM TV"
               loading="lazy"
             />
@@ -73,7 +73,7 @@ export default async function HomePage() {
           <div className="content-grid">
             <div className="content-image">
               <img
-                src="https://i.imgur.com/VgBrI59.png"
+                src="/assista.png"
                 alt="Assista onde quiser"
                 loading="lazy"
               />
