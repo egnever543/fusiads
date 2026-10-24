@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getConfig, getLead } from "@/lib/config";
-import { getPackage, priceReais } from "@/lib/packages";
-import { findCustomerByUsername, sigmaConfigured } from "@/lib/sigma";
+import { getPackage, priceReais, packageCredits } from "@/lib/packages";
+import { findCustomerByUsername, sigmaConfigured, getUserCredits } from "@/lib/sigma";
 import { createTransaction, getTransaction, pixConfigured } from "@/lib/pix";
 import { getRenewal, saveRenewalInit } from "@/lib/renewals";
 import { normalizeProvider } from "@/lib/pix";
@@ -46,6 +46,21 @@ export async function POST(request: Request) {
   const customer = await findCustomerByUsername(username);
   if (!customer) {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
+  }
+
+  // Revendedor sem saldo não pode renovar: barramos ANTES de cobrar o cliente,
+  // pra não receber um pagamento que não poderá ser provisionado. Se não der
+  // pra determinar o saldo (conta ilimitada/erro), seguimos — o provisionamento
+  // ainda valida o saldo antes de renovar.
+  const credits = packageCredits(pkg);
+  if (customer.reseller_id && credits > 0) {
+    const bal = await getUserCredits(customer.reseller_id);
+    if (bal.ok && bal.credits !== null && bal.credits < credits) {
+      return NextResponse.json(
+        { error: "Renovação indisponível no momento. Fale com o suporte." },
+        { status: 409 }
+      );
+    }
   }
 
   const host = request.headers.get("host");

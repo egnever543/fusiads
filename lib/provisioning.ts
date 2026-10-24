@@ -1,6 +1,6 @@
 import { getTransaction } from "./pix";
 import { normalizeProvider } from "./pix";
-import { renewCustomer, removeCredits } from "./sigma";
+import { renewCustomer, removeCredits, addCredits, getUserCredits } from "./sigma";
 import { getPackage, packageCredits } from "./packages";
 import {
   getRenewal,
@@ -44,30 +44,57 @@ export async function provisionRenewal(
     return { ok: false, status: 409, error: "Renovação em andamento." };
   }
 
+  // Custo em créditos do revendedor dono do cliente.
+  const pkg = getPackage(renewal.package_id);
+  const credits = pkg ? packageCredits(pkg) : 0;
+  const resellerId = renewal.reseller_id;
+  const chargeReseller = Boolean(resellerId) && credits > 0;
+
+  // REGRA DE NEGÓCIO: revendedor sem saldo NÃO renova. Checamos o saldo e
+  // debitamos ANTES de renovar — a renovação só acontece se o crédito saiu.
+  if (chargeReseller) {
+    // Bloqueio explícito por saldo. credits === null = não foi possível
+    // determinar (ex.: conta ilimitada) → não bloqueia por isso.
+    const bal = await getUserCredits(resellerId!);
+    if (bal.ok && bal.credits !== null && bal.credits < credits) {
+      await releaseRenewal(transactionId);
+      console.error(
+        `Renovação bloqueada: revendedor ${resellerId} tem ${bal.credits} crédito(s), precisa de ${credits} (tx ${transactionId}).`
+      );
+      return { ok: false, status: 402, error: "Revendedor sem créditos suficientes." };
+    }
+    // Debita primeiro. Se falhar (inclui saldo insuficiente no lado do Sigma),
+    // NÃO renova.
+    const deb = await removeCredits(resellerId!, credits, {
+      reference: transactionId,
+      note: `Renovação ${renewal.username} (${renewal.package_label ?? renewal.package_id})`,
+    });
+    if (!deb.ok) {
+      await releaseRenewal(transactionId);
+      console.error("removeCredits:", deb.error, `(tx ${transactionId})`);
+      return {
+        ok: false,
+        status: 402,
+        error: deb.error ?? "Não foi possível debitar os créditos do revendedor.",
+      };
+    }
+  }
+
   const res = await renewCustomer(renewal.customer_id, renewal.package_id);
   if (!res.ok) {
+    // A renovação falhou DEPOIS do débito → estorna para não cobrar à toa.
+    if (chargeReseller) {
+      const ref = await addCredits(resellerId!, credits, {
+        reference: transactionId,
+        note: `Estorno (renovação falhou) ${renewal.username}`,
+      });
+      if (!ref.ok) console.error("addCredits (estorno):", ref.error, `(tx ${transactionId})`);
+    }
     await releaseRenewal(transactionId); // libera para nova tentativa
     return { ok: false, status: 502, error: res.error };
   }
 
   await markRenewed(transactionId);
-
-  // Debita os créditos do revendedor dono do cliente (não da conta-mãe).
-  // Best-effort: a renovação já aconteceu e foi paga, então uma falha aqui NÃO
-  // desfaz nem repete a renovação — apenas registra o erro para conciliação.
-  try {
-    const pkg = getPackage(renewal.package_id);
-    const credits = pkg ? packageCredits(pkg) : 0;
-    if (renewal.reseller_id && credits > 0) {
-      const deb = await removeCredits(renewal.reseller_id, credits, {
-        reference: transactionId,
-        note: `Renovação ${renewal.username} (${renewal.package_label ?? renewal.package_id})`,
-      });
-      if (!deb.ok) console.error("removeCredits:", deb.error);
-    }
-  } catch (e) {
-    console.error("removeCredits exception:", (e as Error).message);
-  }
 
   return { ok: true, status: 200, amount: renewal.amount };
 }
