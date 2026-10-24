@@ -50,12 +50,18 @@ export async function provisionRenewal(
   const resellerId = renewal.reseller_id;
   const chargeReseller = Boolean(resellerId) && credits > 0;
 
+  // Movimentação de créditos registrada na transação (saldo antes/depois).
+  let creditsCharged: number | null = null;
+  let balBefore: number | null = null;
+  let balAfter: number | null = null;
+
   // REGRA DE NEGÓCIO: revendedor sem saldo NÃO renova. Checamos o saldo e
   // debitamos ANTES de renovar — a renovação só acontece se o crédito saiu.
   if (chargeReseller) {
     // Bloqueio explícito por saldo. credits === null = não foi possível
     // determinar (ex.: conta ilimitada) → não bloqueia por isso.
     const bal = await getUserCredits(resellerId!);
+    balBefore = bal.credits;
     if (bal.ok && bal.credits !== null && bal.credits < credits) {
       await releaseRenewal(transactionId);
       console.error(
@@ -78,6 +84,9 @@ export async function provisionRenewal(
         error: deb.error ?? "Não foi possível debitar os créditos do revendedor.",
       };
     }
+    creditsCharged = credits;
+    // Saldo DEPOIS do débito (para registrar a movimentação na transação).
+    balAfter = (await getUserCredits(resellerId!)).credits;
   }
 
   const res = await renewCustomer(renewal.customer_id, renewal.package_id);
@@ -94,7 +103,11 @@ export async function provisionRenewal(
     return { ok: false, status: 502, error: res.error };
   }
 
-  await markRenewed(transactionId);
+  await markRenewed(transactionId, {
+    creditsCharged,
+    resellerCreditsBefore: balBefore,
+    resellerCreditsAfter: balAfter,
+  });
 
   return { ok: true, status: 200, amount: renewal.amount };
 }
