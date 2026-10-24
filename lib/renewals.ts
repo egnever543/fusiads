@@ -20,12 +20,17 @@ export type Renewal = {
   wbraid: string | null;
   provider: string | null;
   reseller_id: string | null;
+  // Movimentação de créditos do revendedor nesta renovação (preenchido no
+  // provisionamento): quanto foi debitado e o saldo antes/depois.
+  credits_charged: number | null;
+  reseller_credits_before: number | null;
+  reseller_credits_after: number | null;
   created_at: string | null;
   renewed_at: string | null;
 };
 
 const COLS =
-  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, gbraid, wbraid, provider, reseller_id, created_at, renewed_at";
+  "transaction_id, username, customer_id, package_id, package_label, amount, status, provisioned, provisioning, gclid, gbraid, wbraid, provider, reseller_id, credits_charged, reseller_credits_before, reseller_credits_after, created_at, renewed_at";
 
 export async function saveRenewalInit(input: {
   transactionId: string;
@@ -128,11 +133,28 @@ export async function releaseRenewal(transactionId: string): Promise<void> {
     .eq("transaction_id", transactionId);
 }
 
-export async function markRenewed(transactionId: string): Promise<void> {
+export async function markRenewed(
+  transactionId: string,
+  credit?: {
+    creditsCharged?: number | null;
+    resellerCreditsBefore?: number | null;
+    resellerCreditsAfter?: number | null;
+  }
+): Promise<void> {
   const client = getServiceClient();
   if (!client) return;
-  await client
-    .from("renewals")
-    .update({ provisioned: true, provisioning: false, status: "paid", renewed_at: new Date().toISOString() })
-    .eq("transaction_id", transactionId);
+  const update: Record<string, unknown> = {
+    provisioned: true,
+    provisioning: false,
+    status: "paid",
+    renewed_at: new Date().toISOString(),
+  };
+  if (credit) {
+    if (credit.creditsCharged !== undefined) update.credits_charged = credit.creditsCharged;
+    if (credit.resellerCreditsBefore !== undefined)
+      update.reseller_credits_before = credit.resellerCreditsBefore;
+    if (credit.resellerCreditsAfter !== undefined)
+      update.reseller_credits_after = credit.resellerCreditsAfter;
+  }
+  await client.from("renewals").update(update).eq("transaction_id", transactionId);
 }

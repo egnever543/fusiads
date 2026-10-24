@@ -95,6 +95,9 @@ create table if not exists public.renewals (
   wbraid         text,
   provider       text not null default 'fastdepix',
   reseller_id    text,
+  credits_charged          integer,
+  reseller_credits_before  numeric,
+  reseller_credits_after   numeric,
   created_at     timestamptz not null default now(),
   renewed_at     timestamptz
 );
@@ -103,6 +106,10 @@ alter table public.renewals add column if not exists gbraid text;
 alter table public.renewals add column if not exists wbraid text;
 alter table public.renewals add column if not exists provider text not null default 'fastdepix';
 alter table public.renewals add column if not exists reseller_id text;
+-- Movimentacao de creditos do revendedor na renovacao (desconto, saldo antes/depois):
+alter table public.renewals add column if not exists credits_charged integer;
+alter table public.renewals add column if not exists reseller_credits_before numeric;
+alter table public.renewals add column if not exists reseller_credits_after numeric;
 create index if not exists renewals_username_idx on public.renewals (username);
 create index if not exists renewals_created_at_idx on public.renewals (created_at desc);
 -- Feed de conversoes offline le as renovacoes pagas por renewed_at.
