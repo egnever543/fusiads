@@ -3,6 +3,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { getConfig } from "@/lib/config";
 import { getSecretsStatus } from "@/lib/secrets";
 import { checkSchemaViaServiceRole, getSchemaSql } from "@/lib/db-admin";
+import { versionLabel } from "@/lib/version";
 import { logoutAction } from "./actions";
 import AdminForm from "./AdminForm";
 import DbStatusPanel from "./DbStatusPanel";
@@ -55,6 +56,11 @@ export default async function AdminPage() {
           <DbStatusPanel status={dbStatus} schemaSql={schemaSql} />
         </div>
       </div>
+
+      {/* Versão do sistema — ajuda a conferir se cada conta subiu o deploy. */}
+      <footer className="mt-10 pb-4 text-center text-xs text-slate-400">
+        {versionLabel()}
+      </footer>
     </main>
   );
 }
